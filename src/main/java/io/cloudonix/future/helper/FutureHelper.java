@@ -1,4 +1,4 @@
-package cloudonix.io.FutureHelper;
+package io.cloudonix.future.helper;
 
 import java.time.*;
 import java.util.ArrayList;

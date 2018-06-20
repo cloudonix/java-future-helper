@@ -1,38 +1,38 @@
+# Build and deploy future-helper
 cache:
- paths:
-   - .m2/repository
+  paths:
+    - .m2/repository
 
-stages: 
-  - package 
-  - deploy
-  - s3
-  
-package: 
-  stage: package
+stages:
+    - build
+    - deploy
+    - s3
+    
+package:
+  stage: build
   script:
-     - mvn -B package -DskipTests 
-  artifacts: 
-    paths: 
-      - target
+    - 'mvn package'
+  artifacts:
+    paths:
+    - target
   image: maven
+  
   
 deploy:
   stage: deploy
-  script: 
-    - mvn -B -DaltDeploymentRepository=repo::default::file:./target deploy -DskipTests 
+  script:
+    - 'mvn -DaltDeploymentRepository=repo::default::file:./target/staging deploy'
     - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
-  artifacts: 
+  artifacts:
     paths:
-      - target/staging
+    - target/staging
   image: maven
-  
+
 s3:
   stage: s3
-  script: 
-    - pip install awscli 
-    - aws s3 sync --storage-class REDUCED_REDUNDANCY --acl public-read ./target/ s3://cloudonix-dist/maven2/releases
   image: python
-  only: 
+  script:
+    - pip install awscli
+    - aws s3 sync --storage-class REDUCED_REDUNDANCY --acl public-read ./target/staging/ s3://cloudonix-dist/maven2/releases
+  only:
     - master
-    
-  
