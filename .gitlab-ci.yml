@@ -19,7 +19,7 @@ package:
 deploy:
   stage: deploy
   script: 
-    - mvn -B -DaltDeploymentRepository=repo::default::file:./target/staging deploy -DskipTests 
+    - mvn -B -DaltDeploymentRepository=repo::default::file:./target deploy -DskipTests 
     - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
   artifacts: 
     paths:
