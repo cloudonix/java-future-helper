@@ -1,0 +1,38 @@
+cache:
+ paths:
+   - .m2/repository
+
+stages: 
+  - package 
+  - deploy
+  - s3
+  
+package: 
+  stage: package
+  script:
+     - mvn -B package -DskipTests 
+  artifacts: 
+    paths: 
+      - target
+  image: maven
+  
+deploy:
+  stage: deploy
+  script: 
+    - mvn -B -DaltDeploymentRepository=repo::default::file:./target/staging deploy -DskipTests 
+    - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
+  artifacts: 
+    paths:
+      - target/staging
+  image: maven
+  
+s3:
+  stage: s3
+  script: 
+    - pip install awscli 
+    - aws s3 sync --storage-class REDUCED_REDUNDANCY --acl public-read ./target/staging/ s3://cloudonix-dist/maven2/releases
+  image: python
+  only: 
+    - master
+    
+  
