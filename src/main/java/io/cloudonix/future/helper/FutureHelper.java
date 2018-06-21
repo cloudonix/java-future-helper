@@ -13,30 +13,54 @@ import io.vertx.core.Vertx;
 
 public class FutureHelper {
 	
+	/**
+	 * Provides a future that was completed exceptionally with the provided error
+	 * @param the error to fail the future with
+	 * @return a future that was completed exceptionally with the provided error
+	 */
 	public static <T> CompletableFuture<T> failedFuture(Throwable error) {
 		CompletableFuture<T> fut = new CompletableFuture<T>();
 		fut.completeExceptionally(error);
 		return fut;
 	}
 
+	/**
+	 * Provides a future that was completed with null
+	 * @return a future that was completed with null
+	 */
 	public static CompletableFuture<Void> completedFuture() {
 		CompletableFuture<Void> fut = new CompletableFuture<Void>();
 		fut.complete(null);
 		return fut;
 	}
 	
+	/**
+	 * Provides a future that was completed successfully with the provided value
+	 * @param the value to complete the future with
+	 * @return a future that was completed successfully with the provided value
+	 */
 	public static <T> CompletableFuture<T> completedSuccessfully(T value) {
 		CompletableFuture<T> f = new CompletableFuture<T>();
 		f.complete(value);
 		return f;
 	}
 	
+	/**
+	 * Provides a future that will be completed when a handler will be executed 
+	 * @param an action to perform that receives a handler to execute
+	 * @return a future that will be completed when a handler will be executed 
+	 */
 	public static <T> CompletableFuture<T> successfulFuture(Consumer<Handler<T>> action) {
 		CompletableFuture<T> f = new CompletableFuture<T>();
 		action.accept(value -> f.complete(value));
 		return f;
 	}
 	
+	/**
+	 * Executes a supplier in an asynchronous manner. The supplier can throw exceptions 
+	 * @param the supplier to execute
+	 * @return a CompletableFuture that will be completed after the supplier finished processing
+	 */
 	public static <T> CompletableFuture<T> executeBlocking(ThrowingSupplier<T> sup) {
 		return completedFuture().<T>thenApplyAsync(v -> {
 			try {
@@ -78,6 +102,12 @@ public class FutureHelper {
 		};
 	}
 
+	/**
+	 * Executes a consumer that receives a handler as an argument, and instead of executing that 
+	 * handler it will return a CompletableFuture after it finishes processing. the handler is stricted to handle AsyncResult.
+	 * @param the consumer to execute
+	 * @return a CompletableFuture that will be completed after the consumer finished processing
+	 */
 	public static <T> CompletableFuture<T> fromAsync(Consumer<Handler<AsyncResult<T>>> action) {
 		CompletableFuture<T> fut = new CompletableFuture<>();
 		action.accept(res -> {
@@ -89,6 +119,11 @@ public class FutureHelper {
 		return fut;
 	}
 	
+	/**
+	 * The same as fromAsync only the handler isn't stricted to handle any specific object.
+	 * @param the consumer to execute
+	 * @return a CompletableFuture that will be completed after the consumer finished processing
+	 */
 	public static <T> CompletableFuture<T> fromAsyncSimple(Consumer<Handler<T>> action) {
 		CompletableFuture<T> fut = new CompletableFuture<>();
 		action.accept(lon -> {
@@ -97,6 +132,13 @@ public class FutureHelper {
 		return fut;
 	}
 	
+	/**
+	 * Executed an async operation on every item in a list, and return a CompletableFuture 
+	 * when all operations on all items are finished processing.
+	 * @param the list to operate on
+	 * @param the operation to execute on every item of the list
+	 * @return a CompletableFuture that will complete when all operations on all items are finished processing.
+	 */
 	public static <T> CompletableFuture<Void> executeAllAsync(List<T> list, Function<T, CompletableFuture<Void>> opporation) {
 		List<CompletableFuture<Void>> fut = new ArrayList<>();
 		for(T u : list) {
@@ -106,10 +148,23 @@ public class FutureHelper {
 		return CompletableFuture.allOf(futArr);
 	}
 	
+	/**
+	 * Set an operation to happen daily at a certain time
+	 * @param a Vertx object
+	 * @param the operation to be executed
+	 * @param the time of day to execute the operation
+	 */
 	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay) {
 		setDailyOperation(vertx, operation, timeOfDay, ZoneOffset.UTC);
 	}
 	
+	/**
+	 * Set an operation to happen daily at a certain time
+	 * @param a Vertx object
+	 * @param the operation to be executed
+	 * @param the time of day to execute the operation
+	 * @param the time zone that the time of day is refferenced to
+	 */
 	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay, ZoneOffset timeZone) {
 		vertx.setTimer(getMilsUntil(timeOfDay, timeZone), id1 -> {
 			operation.run();
@@ -119,7 +174,7 @@ public class FutureHelper {
 		});
 	}
 	
-	public static Long getMilsUntil(LocalTime timeOfDay, ZoneOffset timeZone) {
+	private static Long getMilsUntil(LocalTime timeOfDay, ZoneOffset timeZone) {
 		Long time = LocalDateTime.now().toLocalDate().atTime(timeOfDay).toEpochSecond(timeZone);
 		Long now = Instant.now().getEpochSecond();
 		if (time > now)
@@ -130,12 +185,6 @@ public class FutureHelper {
 	public static <T> CompletableFuture<T> fromHandler(Consumer<Handler<T>> action) {
 		CompletableFuture<T> f = new CompletableFuture<>();
 		action.accept(f::complete);
-		return f;
-	}
-	
-	public static <T> CompletableFuture<T> successfulFuture(T value) {
-		CompletableFuture<T> f = new CompletableFuture<T>();
-		f.complete(value);
 		return f;
 	}
 	
