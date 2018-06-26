@@ -1,11 +1,12 @@
 package io.cloudonix.future.helper;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -186,6 +187,65 @@ public class FutureHelper {
 		CompletableFuture<T> f = new CompletableFuture<>();
 		action.accept(f::complete);
 		return f;
+	}
+	
+	/**
+	 * Executes CompletableFuture's allOf on a stream instead of an array
+	 * @param the stream to executr allOf on
+	 * @return a CompletableFuture that will complete when all completableFutures in the stream are completed
+	 */
+    public static <G> CompletableFuture<Void> allOf(Stream<CompletableFuture<G>> futures) {
+		return CompletableFuture.allOf(futures.toArray(i -> new CompletableFuture[i]));
+	}
+	
+	/**
+	 * Executes CompletableFuture's allOf on a list instead of an array
+	 * @param the stream to executr allOf on
+	 * @return a CompletableFuture that will complete when all completableFutures in the list are completed
+	 */
+	public static <G> CompletableFuture<Void> allOf(List<CompletableFuture<G>> list) {
+		return CompletableFuture.allOf(list.toArray(new CompletableFuture[list.size()]));
+	}
+	
+	/**
+	 * wait for all of the futueres to complete and return a list of their results
+	 * @param the stream of CompletableFutures to wait for their completion
+	 * @return a CompletableFuture that will complete when all completableFutures in the stream are completed and contains a list of their results
+	 */	
+	public static <G> CompletableFuture<List<G>> resolveAll(Stream<CompletableFuture<G>> futures) {
+		List<G> out = Collections.synchronizedList(new LinkedList<>());
+		return allOf(futures.map(f -> f.thenAccept(v -> out.add(v))))
+				.thenApply(v -> out.stream().collect(Collectors.toList()));
+	}
+	
+	/**
+	 * wait for all of the futueres to complete and return a list of their results
+	 * @param the list of CompletableFutures to wait for their completion
+	 * @return a CompletableFuture that will complete when all completableFutures in the list are completed and contains a list of their results
+	 */	
+	public static <G> CompletableFuture<List<G>> resolveAll(List<CompletableFuture<G>> futures) {
+		return resolveAll(futures.stream());
+	}
+	
+	/**
+	 * wait for all of the futueres to complete and return a list of their results
+	 * @param the array of CompletableFutures to wait for their completion
+	 * @return a CompletableFuture that will complete when all completableFutures in the array are completed and contains a list of their results
+	 */	
+	@SafeVarargs
+	public static <G> CompletableFuture<List<G>> resolveAll(CompletableFuture<G>...futures) {
+		return resolveAll(Arrays.stream(futures));
+	}
+	
+	/**
+	 * the method create a CompletableFuture that is ended exceptionally with the given error (throwable) and return it
+	 * @param th the error that occurred
+	 * @return
+	 */
+	public static <V> CompletableFuture<V> completedExceptionally(Throwable th) {
+		CompletableFuture<V> compExceptionaly = new CompletableFuture<V>();
+		 compExceptionaly.completeExceptionally(th);
+		 return compExceptionaly;
 	}
 	
 }
