@@ -30,8 +30,9 @@ deploy:
 
 s3:
   stage: s3
-  image: mesosphere/aws-cli
-  entrypoint: [""]
+  image:
+    name: mesosphere/aws-cli
+    entrypoint: [""]
   script:
     - aws s3 sync --storage-class REDUCED_REDUNDANCY --acl public-read ./target/staging/ s3://cloudonix-dist/maven2/releases
   only:
