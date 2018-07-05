@@ -1,6 +1,6 @@
 # FutureHelper
 
-FutureHelper is a utility library that contains useful methods that handle futures
+FutureHelper is a utility library that contains useful methods that handle Java 8's `CompletableFuture`
 
 ## Installation
 
@@ -16,7 +16,7 @@ in the public Maven repository) as an element under `<project>`:
 </repositories>
 ```
 
-Then add Nuts as a dependency:
+Then add the library as a dependency:
 
 ```
 <dependency>
@@ -43,3 +43,17 @@ Class MyClass(){
 }
 ```
 
+It is also possible to stream-line some references by staticaly importing them, or all references:
+
+```
+import static io.cloudonix.future.helper.FutureHelper.*;
+
+class MyClass(){
+    protected CompletableFuture<Void> promise() {
+        return completedFuture();
+    }
+}
+```
+
+    }
+}
