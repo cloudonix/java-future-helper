@@ -145,8 +145,23 @@ public class FutureHelper {
 		for(T u : list) {
 			fut.add(opporation.apply(u));
 		}
-		CompletableFuture[] futArr = fut.toArray(new CompletableFuture[fut.size()]);
-		return CompletableFuture.allOf(futArr);
+		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()]));
+	}
+	
+	/**
+	 * list executeAllAsync only it completes with a list of the 
+	 * @param the list to operate on
+	 * @param the operation to execute on every item of the list
+	 * @return a CompletableFuture that will complete when all operations on all items are finished processing.
+	 */
+	public static <T, G> CompletableFuture<List<G>> executeAllAsyncWithResults(List<T> list,
+			Function<T, CompletableFuture<G>> opporation) {
+		List<G> listOfRes = new ArrayList<>();
+		List<CompletableFuture<Void>> fut = new ArrayList<>();
+		for (T u : list) {
+			fut.add(opporation.apply(u).thenAccept(res -> listOfRes.add(res)));
+		}
+		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()])).thenApply(v -> listOfRes);
 	}
 	
 	/**
@@ -170,6 +185,22 @@ public class FutureHelper {
 		vertx.setTimer(getMilsUntil(timeOfDay, timeZone), id1 -> {
 			operation.run();
 			vertx.setPeriodic(24 * 60 * 60 * 1000, id2 -> {
+				operation.run();
+			});
+		});
+	}
+	
+	/**
+	 * Set an operation to happen daily at a certain time
+	 * @param a Vertx object
+	 * @param the operation to be executed
+	 * @param the UNIX epoch time of when to perform the first execution, in milliseconds
+	 * @param the amount of milliseconds between each execution
+	 */
+	public static void setPeriodicOperation(Vertx vertx, Runnable operation, Long firstTime, Long recurrenceEvery) {
+		vertx.setTimer(firstTime - Instant.now().toEpochMilli(), id1 -> {
+			operation.run();
+			vertx.setPeriodic(recurrenceEvery, id2 -> {
 				operation.run();
 			});
 		});
