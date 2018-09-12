@@ -136,23 +136,6 @@ public class Futures {
 	}
 
 	/**
-	 * The same as fromAsync only the handler isn't stricted to handle any specific
-	 * object.
-	 * 
-	 * @param action
-	 *            the consumer to execute
-	 * @return a CompletableFuture that will be completed after the consumer
-	 *         finished processing
-	 */
-	public static <T> CompletableFuture<T> fromAsyncSimple(Consumer<Handler<T>> action) {
-		CompletableFuture<T> fut = new CompletableFuture<>();
-		action.accept(lon -> {
-			fut.complete(lon);
-		});
-		return fut;
-	}
-
-	/**
 	 * Executed an async operation on every item in a list, and return a
 	 * CompletableFuture when all operations on all items are finished processing.
 	 * 
