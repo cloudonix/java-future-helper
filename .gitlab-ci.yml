@@ -11,7 +11,7 @@ stages:
 package:
   stage: build
   script:
-    - 'mvn package'
+    - mvn -B package
   artifacts:
     paths:
     - target
@@ -21,7 +21,7 @@ package:
 deploy:
   stage: deploy
   script:
-    - 'mvn -DaltDeploymentRepository=repo::default::file:./target/staging deploy'
+    - mvn -B -DaltDeploymentRepository=repo::default::file:./target/staging deploy
 #    - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
   artifacts:
     paths:
