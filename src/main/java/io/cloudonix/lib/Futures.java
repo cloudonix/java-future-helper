@@ -194,6 +194,21 @@ public class Futures {
 		return f;
 	}
 
+    /**
+     * Returns a new CompletableFuture that is completed when any of
+     * the given CompletableFutures complete, with the same result.
+     * Otherwise, if it completed exceptionally, the returned
+     * CompletableFuture also does so, with a CompletionException
+     * holding this exception as its cause.  If no CompletableFutures
+     * are provided, returns an incomplete CompletableFuture.
+     *
+     * @param futures a stream of CompletableFutures
+     * @return a new CompletableFuture that is completed with the
+     * result or exception of any of the given CompletableFutures when
+     * one completes
+     * @throws NullPointerException if the array or any of its elements are
+     * {@code null}
+     */
 	public static <G> CompletableFuture<Object> anyOf(Stream<CompletableFuture<G>> futures) {
 		return CompletableFuture.anyOf(futures.toArray(i -> new CompletableFuture[i]));
 	}
