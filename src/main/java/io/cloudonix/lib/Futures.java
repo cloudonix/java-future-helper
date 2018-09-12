@@ -188,6 +188,11 @@ public class Futures {
 		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()])).thenApply(v -> listOfRes);
 	}
 
+	/**
+	 * Convert a Vert.x async action that cannot fail (takes a {@link Handler}) to a Java CompletableFuture
+	 * @param action Async action that takes a Vert.x {@link Handler} as a callback.
+	 * @return a CompletableFuture that will complete successfully when the handler is caller, and cannot complete exceptionally
+	 */
 	public static <T> CompletableFuture<T> fromHandler(Consumer<Handler<T>> action) {
 		CompletableFuture<T> f = new CompletableFuture<>();
 		action.accept(f::complete);
