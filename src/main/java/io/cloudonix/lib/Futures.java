@@ -50,19 +50,6 @@ public class Futures {
 	}
 
 	/**
-	 * Provides a future that will be completed when a handler will be executed
-	 * 
-	 * @param action
-	 *            an action to perform that receives a handler to execute
-	 * @return a future that will be completed when a handler will be executed
-	 */
-	public static <T> CompletableFuture<T> successfulFuture(Consumer<Handler<T>> action) {
-		CompletableFuture<T> f = new CompletableFuture<T>();
-		action.accept(value -> f.complete(value));
-		return f;
-	}
-
-	/**
 	 * Executes a supplier in an asynchronous manner. The supplier can throw
 	 * exceptions
 	 * 
