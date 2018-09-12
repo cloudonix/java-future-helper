@@ -22,7 +22,7 @@ deploy:
   stage: deploy
   script:
     - 'mvn -DaltDeploymentRepository=repo::default::file:./target/staging deploy'
-    - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
+#    - cp target/future-helper-*-fat.jar target/staging/io/cloudonix/future-helper/*/
   artifacts:
     paths:
     - target/staging
