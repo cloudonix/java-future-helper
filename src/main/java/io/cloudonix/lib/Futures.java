@@ -45,7 +45,7 @@ public class Futures {
 	 *            the value to complete the future with
 	 * @return a future that was completed successfully with the provided value
 	 */
-	public static <T> CompletableFuture<T> completedSuccessfully(T value) {
+	public static <T> CompletableFuture<T> completedFuture(T value) {
 		CompletableFuture<T> f = new CompletableFuture<T>();
 		f.complete(value);
 		return f;
