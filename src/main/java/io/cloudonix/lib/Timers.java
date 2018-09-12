@@ -1,20 +1,29 @@
 package io.cloudonix.lib;
 
 import java.time.*;
+import java.util.concurrent.TimeUnit;
 
 import io.vertx.core.Vertx;
 
 public class Timers {
 
 	/**
-	 * Set an operation to happen daily at a certain time
+	 * Set an operation to happen daily at midnight UTC
 	 * 
-	 * @param vertx
-	 *            a Vertx object
-	 * @param operation
-	 *            the operation to be executed
-	 * @param timeOfDay
-	 *            the time of day to execute the operation
+	 * @param vertx a Vertx instance where the periodic operation will be created
+	 * @param operation the operation to be executed
+	 * @param timeOfDay the time of day to execute the operation
+	 */
+	public static void setDailyOperation(Vertx vertx, Runnable operation) {
+		setDailyOperation(vertx, operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
+	}
+
+	/**
+	 * Set an operation to happen daily at a certain time in UTC
+	 * 
+	 * @param vertx a Vertx instance where the periodic operation will be created
+	 * @param operation the operation to be executed
+	 * @param timeOfDay the time of day to execute the operation
 	 */
 	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay) {
 		setDailyOperation(vertx, operation, timeOfDay, ZoneOffset.UTC);
@@ -23,27 +32,18 @@ public class Timers {
 	/**
 	 * Set an operation to happen daily at a certain time
 	 * 
-	 * @param vertx
-	 *            a Vertx object
-	 * @param operation
-	 *            the operation to be executed
-	 * @param timeOfDay
-	 *            the time of day to execute the operation
-	 * @param timeZone
-	 *            the time zone that the time of day is referenced to
+	 * @param vertx a Vertx instance where the periodic operation will be created
+	 * @param operation the operation to be executed
+	 * @param timeOfDay the time of day to execute the operation
+	 * @param timeZone the time zone that the time of day is referenced to
 	 */
 	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay, ZoneOffset timeZone) {
-		vertx.setTimer(getMilsUntil(timeOfDay, timeZone), id1 -> {
-			operation.run();
-			vertx.setPeriodic(24 * 60 * 60 * 1000, id2 -> {
-				operation.run();
-			});
-		});
+		setPeriodicOperation(vertx, operation, getMilsUntil(timeOfDay, timeZone), TimeUnit.DAYS.toMillis(1));
 	}
 	
 	/**
 	 * Set an operation to happen daily at a certain time
-	 * @param a Vertx object
+	 * @param a Vertx instance where the periodic operation will be created
 	 * @param the operation to be executed
 	 * @param the UNIX epoch time of when to perform the first execution, in milliseconds
 	 * @param the amount of milliseconds between each execution
