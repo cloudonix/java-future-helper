@@ -93,10 +93,16 @@ public class Futures {
 	public static <T, E extends Throwable> Function<Throwable, ? extends T> on(Class<E> errType,
 			Function<E, ? extends T> fn) {
 		return t -> {
-			if (!errType.isInstance(t))
+			Throwable cause = t;
+			while (Objects.nonNull(cause)) {
+				if (errType.isInstance(cause))
+					break;
+				cause = cause.getCause();
+			}
+			if (Objects.isNull(cause))
 				Thrower.spit(t);
 			@SuppressWarnings("unchecked")
-			E e = (E) t;
+			E e = (E) cause;
 			return fn.apply(e);
 		};
 	}
@@ -141,12 +147,16 @@ public class Futures {
 		}
 		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()]));
 	}
-	
+
 	/**
-	 * list executeAllAsync only it completes with a list of the 
-	 * @param list the list to operate on
-	 * @param opporation the operation to execute on every item of the list
-	 * @return a CompletableFuture that will complete when all operations on all items are finished processing.
+	 * list executeAllAsync only it completes with a list of the
+	 * 
+	 * @param list
+	 *            the list to operate on
+	 * @param opporation
+	 *            the operation to execute on every item of the list
+	 * @return a CompletableFuture that will complete when all operations on all
+	 *         items are finished processing.
 	 */
 	public static <T, G> CompletableFuture<List<G>> executeAllAsyncWithResults(List<T> list,
 			Function<T, CompletableFuture<G>> opporation) {
@@ -159,9 +169,13 @@ public class Futures {
 	}
 
 	/**
-	 * Convert a Vert.x async action that cannot fail (takes a {@link Handler}) to a Java CompletableFuture
-	 * @param action Async action that takes a Vert.x {@link Handler} as a callback.
-	 * @return a CompletableFuture that will complete successfully when the handler is caller, and cannot complete exceptionally
+	 * Convert a Vert.x async action that cannot fail (takes a {@link Handler}) to a
+	 * Java CompletableFuture
+	 * 
+	 * @param action
+	 *            Async action that takes a Vert.x {@link Handler} as a callback.
+	 * @return a CompletableFuture that will complete successfully when the handler
+	 *         is caller, and cannot complete exceptionally
 	 */
 	public static <T> CompletableFuture<T> fromHandler(Consumer<Handler<T>> action) {
 		CompletableFuture<T> f = new CompletableFuture<>();
@@ -169,21 +183,20 @@ public class Futures {
 		return f;
 	}
 
-    /**
-     * Returns a new CompletableFuture that is completed when any of
-     * the given CompletableFutures complete, with the same result.
-     * Otherwise, if it completed exceptionally, the returned
-     * CompletableFuture also does so, with a CompletionException
-     * holding this exception as its cause.  If no CompletableFutures
-     * are provided, returns an incomplete CompletableFuture.
-     *
-     * @param futures a stream of CompletableFutures
-     * @return a new CompletableFuture that is completed with the
-     * result or exception of any of the given CompletableFutures when
-     * one completes
-     * @throws NullPointerException if the array or any of its elements are
-     * {@code null}
-     */
+	/**
+	 * Returns a new CompletableFuture that is completed when any of the given
+	 * CompletableFutures complete, with the same result. Otherwise, if it completed
+	 * exceptionally, the returned CompletableFuture also does so, with a
+	 * CompletionException holding this exception as its cause. If no
+	 * CompletableFutures are provided, returns an incomplete CompletableFuture.
+	 *
+	 * @param futures
+	 *            a stream of CompletableFutures
+	 * @return a new CompletableFuture that is completed with the result or
+	 *         exception of any of the given CompletableFutures when one completes
+	 * @throws NullPointerException
+	 *             if the array or any of its elements are {@code null}
+	 */
 	public static <G> CompletableFuture<Object> anyOf(Stream<CompletableFuture<G>> futures) {
 		return CompletableFuture.anyOf(futures.toArray(i -> new CompletableFuture[i]));
 	}
