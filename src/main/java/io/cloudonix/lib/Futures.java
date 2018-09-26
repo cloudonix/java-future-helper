@@ -2,6 +2,9 @@ package io.cloudonix.lib;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -224,9 +227,58 @@ public class Futures {
 	public static <G> CompletableFuture<Void> allOf(List<CompletableFuture<G>> list) {
 		return CompletableFuture.allOf(list.toArray(new CompletableFuture[list.size()]));
 	}
+	
+	/**
+	 * Returns a new CompletableFuture that is completed when the first future in the stream
+	 * completes, with that future's completion value. If all of the futures in the stream completed
+	 * exceptionally, then returned CompletableFuture is completed exceptionally with the exception
+	 * with which the last future completed exceptionally (chronologically, not in order).
+	 * 
+	 * If no futures where provided in the stream (hence no future completed exceptionally or otherwise)
+	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
+	 * 
+	 * @param futures {@link Stream} of futures to consider
+	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
+	 */
+	public static <G> CompletableFuture<G> resolveAny(Stream<CompletableFuture<G>> futures) {
+		AtomicReference<Throwable> lastFailure = new AtomicReference<>();
+		AtomicBoolean wasCompleted = new AtomicBoolean();
+		CompletableFuture<G> res = new CompletableFuture<G>();
+		Futures.<Void>allOf(futures.map(f -> f.thenAccept(v -> {
+			if (wasCompleted.compareAndSet(false, true))
+				res.complete(v);
+			}).exceptionally(t -> {
+				lastFailure.set(t);
+				return null;
+			}))).thenAccept(v -> {
+				if (wasCompleted.get())
+					return;
+				if (Objects.nonNull(lastFailure.get()))
+					res.completeExceptionally(new CompletionException(lastFailure.get()));
+				else
+					res.completeExceptionally(new CompletionException(new NoSuchElementException()));
+			});
+		return res;
+	}
+	
+	/**
+	 * Returns a new CompletableFuture that is completed when the first future in the list
+	 * completes, with that future's completion value. If all of the futures in the list completed
+	 * exceptionally, then returned CompletableFuture is completed exceptionally with the exception
+	 * with which the last future completed exceptionally (chronologically, not in order).
+	 * 
+	 * If no futures where provided in the list (hence no future completed exceptionally or otherwise)
+	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
+	 * 
+	 * @param futures {@link List} of futures to consider
+	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
+	 */
+	public static <G> CompletableFuture<G> resolveAny(List<CompletableFuture<G>> futures) {
+		return resolveAny(futures.stream());
+	}
 
 	/**
-	 * wait for all of the futueres to complete and return a list of their results
+	 * wait for all of the futures to complete and return a list of their results
 	 * 
 	 * @param futures
 	 *            the stream to execute allOf on
