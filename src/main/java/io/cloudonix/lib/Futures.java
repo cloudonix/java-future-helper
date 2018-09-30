@@ -92,9 +92,14 @@ public class Futures {
 			}
 		}
 	}
+	
+	@FunctionalInterface
+	public interface ThrowingFunction<U,V> {
+		V apply(U value) throws Throwable;
+	}
 
 	public static <T, E extends Throwable> Function<Throwable, ? extends T> on(Class<E> errType,
-			Function<E, ? extends T> fn) {
+			ThrowingFunction<E, ? extends T> fn) {
 		return t -> {
 			Throwable cause = t;
 			while (Objects.nonNull(cause)) {
@@ -106,7 +111,12 @@ public class Futures {
 				Thrower.spit(t);
 			@SuppressWarnings("unchecked")
 			E e = (E) cause;
-			return fn.apply(e);
+			try {
+				return fn.apply(e);
+			} catch (Throwable e1) {
+				Thrower.spit(e1);
+				return null; // won't actually run, but java can't detect that spit() throws
+			}
 		};
 	}
 
