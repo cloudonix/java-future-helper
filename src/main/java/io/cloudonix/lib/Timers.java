@@ -49,7 +49,7 @@ public class Timers {
 	 * @param the amount of milliseconds between each execution
 	 */
 	public static void setPeriodicOperation(Vertx vertx, Runnable operation, Long firstTime, Long recurrenceEvery) {
-		vertx.setTimer(Math.min(1,  firstTime - Instant.now().toEpochMilli()), id1 -> {
+		vertx.setTimer(Math.max(1,  firstTime - Instant.now().toEpochMilli()), id1 -> {
 			operation.run();
 			vertx.setPeriodic(recurrenceEvery, id2 -> {
 				operation.run();
