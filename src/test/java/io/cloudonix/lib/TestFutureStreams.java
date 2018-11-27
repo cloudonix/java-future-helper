@@ -1,7 +1,6 @@
 package io.cloudonix.lib;
 
-import static org.junit.Assert.assertEquals;
-
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -10,13 +9,15 @@ import java.util.stream.Stream;
 
 import org.junit.Test;
 
+import static org.assertj.core.api.Assertions.*;
+
 public class TestFutureStreams {
 
 	@Test
 	public void testFutureStreamToStream() {
-		assertEquals(
-				IntStream.range(0, 10).mapToObj(i -> i).collect(Collectors.toList()),
-				genStream(10).collect(new StreamFutureResolver<>()).collect(Collectors.toList()));
+		List<Integer> expected = IntStream.range(0, 10).mapToObj(i -> i).collect(Collectors.toList());
+		List<Integer> computed = genStream(10).collect(new StreamFutureResolver<>()).sorted().collect(Collectors.toList());
+		assertThat(computed).isEqualTo(expected);
 	}	
 	
 	static Random r = new Random();
