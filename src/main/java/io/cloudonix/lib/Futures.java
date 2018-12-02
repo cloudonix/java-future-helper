@@ -217,7 +217,7 @@ public class Futures {
 	 *             if the array or any of its elements are {@code null}
 	 */
 	public static <G> CompletableFuture<Object> anyOf(Stream<CompletableFuture<G>> futures) {
-		return CompletableFuture.anyOf(futures.toArray(i -> new CompletableFuture[i]));
+		return CompletableFuture.anyOf(futures.toArray(CompletableFuture[]::new));
 	}
 
 	/**
@@ -229,7 +229,7 @@ public class Futures {
 	 *         the stream are completed
 	 */
 	public static <G> CompletableFuture<Void> allOf(Stream<CompletableFuture<G>> futures) {
-		return CompletableFuture.allOf(futures.toArray(i -> new CompletableFuture[i]));
+		return CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new));
 	}
 
 	/**
