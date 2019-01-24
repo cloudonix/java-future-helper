@@ -7,6 +7,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -332,4 +334,20 @@ public class Futures {
 		return resolveAll(Arrays.stream(futures));
 	}
 
+	/**
+	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
+	 * @param delay delay in milliseconds to impart on the value
+	 * @return A function to be used in @{link {@link CompletableFuture#thenCompose(Function)}
+	 */
+	public static <T> Function<T, CompletableFuture<T>> delay(long delay) {
+		CompletableFuture<T> future = new CompletableFuture<>();
+		return value -> {
+			new Timer(true).schedule(new TimerTask() {
+				@Override
+				public void run() {
+					future.complete(value);
+				}}, delay);
+			return future;
+		};
+	}
 }
