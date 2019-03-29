@@ -2,7 +2,12 @@ package io.cloudonix.lib;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
@@ -11,8 +16,48 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 public class StreamFutureResolver<T> implements Collector<CompletableFuture<T>, Collection<?>, Stream<T>> {
+
+	class CompletedFuture<G> implements Future<G> {
+		private G value;
+		private Throwable error;
+
+		public CompletedFuture(G value) {
+			this.value = value;
+		}
+
+		public CompletedFuture(Throwable error) {
+			this.error = error;
+		}
+
+		@Override
+		public boolean cancel(boolean mayInterruptIfRunning) {
+			return false;
+		}
+
+		@Override
+		public boolean isCancelled() {
+			return false;
+		}
+
+		@Override
+		public boolean isDone() {
+			return true;
+		}
+
+		@Override
+		public G get() throws InterruptedException, ExecutionException {
+			if (Objects.nonNull(error))
+				throw new ExecutionException(error);
+			return value;
+		}
+
+		@Override
+		public G get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+			return get();
+		}
+	}
 	
-	ConcurrentLinkedDeque<AtomicReference<T>> buffer = new ConcurrentLinkedDeque<>();
+	ConcurrentLinkedDeque<AtomicReference<Future<T>>> buffer = new ConcurrentLinkedDeque<>();
 	AtomicInteger count = new AtomicInteger(0);
 
 	@Override
@@ -24,7 +69,7 @@ public class StreamFutureResolver<T> implements Collector<CompletableFuture<T>, 
 	public BiConsumer<Collection<?>, CompletableFuture<T>> accumulator() {
 		return (deq, fut) -> {
 			count.incrementAndGet();
-			fut.thenAccept(this::add);
+			fut.thenAccept(this::add).exceptionally(this::reject);
 		};
 	}
 
@@ -57,9 +102,15 @@ public class StreamFutureResolver<T> implements Collector<CompletableFuture<T>, 
 					} catch (InterruptedException e) {
 					}
 				}
-				AtomicReference<T> ref = buffer.pollFirst();
+				AtomicReference<Future<T>> ref = buffer.pollFirst();
 				count.decrementAndGet();
-				return Objects.nonNull(ref) ? ref.get() : null;
+				try {
+					return Objects.nonNull(ref) ? ref.get().get() : null;
+				} catch (InterruptedException e) { // can't happen
+					throw new CompletionException(e);
+				} catch (ExecutionException e) {
+					throw new CompletionException(e.getCause());
+				}
 			}
 		}, count.get(), Spliterator.SIZED | Spliterator.IMMUTABLE | Spliterator.CONCURRENT);
 	}
@@ -74,6 +125,11 @@ public class StreamFutureResolver<T> implements Collector<CompletableFuture<T>, 
 	}
 
 	private void add(T value) {
-		buffer.add(new AtomicReference<>(value));
+		buffer.add(new AtomicReference<>(new CompletedFuture<T>(value)));
+	}
+	
+	private Void reject(Throwable err) {
+		buffer.add(new AtomicReference<>(new CompletedFuture<T>(err)));
+		return null;
 	}
 }
