@@ -2,16 +2,14 @@ package io.cloudonix.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -304,9 +302,13 @@ public class Futures {
 	 *         the stream are completed and contains a list of their results
 	 */
 	public static <G> CompletableFuture<List<G>> resolveAll(Stream<CompletableFuture<G>> futures) {
-		List<G> out = Collections.synchronizedList(new LinkedList<>());
-		return allOf(futures.map(f -> f.thenAccept(v -> out.add(v))))
-				.thenApply(v -> out.stream().collect(Collectors.toList()));
+		ConcurrentSkipListMap<Integer, G> out = new ConcurrentSkipListMap<>();
+		AtomicInteger i = new AtomicInteger(0);
+		return allOf(futures.map(f -> {
+			int index = i.getAndIncrement();
+			return f.thenAccept(v -> out.put(index, v));
+		}))
+		.thenApply(v -> out.values().stream().collect(Collectors.toList()));
 	}
 
 	/**

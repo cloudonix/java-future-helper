@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.Stream.Builder;
 
 import org.junit.Test;
 
@@ -403,4 +404,28 @@ public class TestFutures {
 		assertTrue(lock.await(2, TimeUnit.SECONDS));
 	}
 	
+	private class DelayedCount {
+		int index;
+		long delay;
+	}
+	
+	@Test
+	public void testResolveAllStreamOrder() throws InterruptedException, ExecutionException {
+		Builder<DelayedCount> builder = Stream.builder();
+		for (int i = 0; i < 10; i++) {
+			DelayedCount c = new DelayedCount();
+			c.index = i;
+			c.delay = 1000-(i * 100);
+			builder.add(c);
+		}
+		
+		Futures.resolveAll(builder.build().map(c-> Futures.completedFuture(c.index).thenCompose(Futures.delay(c.delay))))
+		.whenComplete((v,t) -> {
+			assertNull(t);
+			assertEquals(10, v.size());
+			for (int i = 0; i < v.size(); i++)
+				assertEquals(i + "th item is out of order", i, v.get(i).intValue());
+		})
+		.get();
+	}
 }
