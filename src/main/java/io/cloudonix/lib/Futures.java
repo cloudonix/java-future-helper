@@ -292,6 +292,13 @@ public class Futures {
 	public static <G> CompletableFuture<G> resolveAny(List<CompletableFuture<G>> futures) {
 		return resolveAny(futures.stream());
 	}
+	
+	private static class Holder<T> {
+		T value;
+		public Holder(T val) {
+			value = val;
+		}
+	}
 
 	/**
 	 * wait for all of the futures to complete and return a list of their results
@@ -302,17 +309,17 @@ public class Futures {
 	 *         the stream are completed and contains a list of their results
 	 */
 	public static <G> CompletableFuture<List<G>> resolveAll(Stream<CompletableFuture<G>> futures) {
-		ConcurrentSkipListMap<Integer, G> out = new ConcurrentSkipListMap<>();
+		ConcurrentSkipListMap<Integer, Holder<G>> out = new ConcurrentSkipListMap<>();
 		AtomicInteger i = new AtomicInteger(0);
 		return allOf(futures.map(f -> {
 			int index = i.getAndIncrement();
-			return f.thenAccept(v -> out.put(index, v));
+			return f.thenAccept(v -> out.put(index, new Holder<>(v)));
 		}))
-		.thenApply(v -> out.values().stream().collect(Collectors.toList()));
+		.thenApply(v -> out.values().stream().map(h -> h.value).collect(Collectors.toList()));
 	}
 
 	/**
-	 * wait for all of the futueres to complete and return a list of their results
+	 * wait for all of the futures to complete and return a list of their results
 	 * 
 	 * @param futures
 	 *            list of CompletableFutures to wait for their completion
