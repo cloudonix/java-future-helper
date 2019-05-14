@@ -2,17 +2,24 @@ package io.cloudonix.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -341,6 +348,41 @@ public class Futures {
 	@SafeVarargs
 	public static <G> CompletableFuture<List<G>> resolveAll(CompletableFuture<G>... futures) {
 		return resolveAll(Arrays.stream(futures));
+	}
+	
+	/**
+	 * Add streaming collector to make stream resolving nicer
+	 * @param <G> The type of futures resolved by this stream
+	 * @return a collector that collects a stream of futures to a future list
+	 */
+	public static <G> Collector<CompletableFuture<G>, Queue<CompletableFuture<G>>, CompletableFuture<List<G>>> resolvingCollector() {
+		return new Collector<CompletableFuture<G>, Queue<CompletableFuture<G>>, CompletableFuture<List<G>>>(){
+			@Override
+			public Supplier<Queue<CompletableFuture<G>>> supplier() {
+				return ConcurrentLinkedQueue<CompletableFuture<G>>::new;
+			}
+
+			@Override
+			public BiConsumer<Queue<CompletableFuture<G>>, CompletableFuture<G>> accumulator() {
+				return Queue::add;
+			}
+
+			@Override
+			public BinaryOperator<Queue<CompletableFuture<G>>> combiner() {
+				return (a,b) -> { a.addAll(b); return a; };
+			}
+
+			@Override
+			public Function<Queue<CompletableFuture<G>>, CompletableFuture<List<G>>> finisher() {
+				return q -> resolveAll(q.stream());
+			}
+
+			@Override
+			public Set<Characteristics> characteristics() {
+				return Collections.singleton(Characteristics.CONCURRENT);
+			}
+			
+		};
 	}
 
 	/**
