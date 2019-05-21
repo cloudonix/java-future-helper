@@ -8,8 +8,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -393,11 +391,7 @@ public class Futures {
 	public static <T> Function<T, CompletableFuture<T>> delay(long delay) {
 		CompletableFuture<T> future = new CompletableFuture<>();
 		return value -> {
-			new Timer(true).schedule(new TimerTask() {
-				@Override
-				public void run() {
-					future.complete(value);
-				}}, delay);
+			Timers.schedule(() -> future.complete(value), delay);
 			return future;
 		};
 	}

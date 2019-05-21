@@ -39,6 +39,15 @@ public class Timers {
 	}
 
 	/**
+	 * Schedule a one time operation
+	 * @param operation the operation to be executed
+	 * @param delay number of milliseconds to wait before invoking the operation
+	 */
+	public static void schedule(Runnable operation, long delay) {
+		timer.schedule(new RunnableTask(operation), delay);
+	}
+
+	/**
 	 * Set an operation to happen daily at midnight UTC
 	 * 
 	 * @param operation the operation to be executed
