@@ -1,68 +1,90 @@
 package io.cloudonix.lib;
 
 import java.time.*;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
-import io.vertx.core.Vertx;
-
 public class Timers {
+	
+	public static Timer timer = new Timer("cxlib-timer", true);
+	
+	static class RunnableTask extends TimerTask {
+		private Runnable op;
+		private RunnableTask(Runnable run) {
+			op = run;
+		}
+		@Override
+		public void run() {
+			op.run();
+		}
+	}
+	
+	static class RecuringRunnableTask extends TimerTask {
+		private Runnable op;
+		private LocalTime timeOfDay;
+		private ZoneOffset timezone;
+
+		private RecuringRunnableTask(Runnable run, LocalTime timeOfDay, ZoneOffset timezone) {
+			op = run;
+			this.timeOfDay = timeOfDay;
+			this.timezone = timezone;
+		}
+		@Override
+		public void run() {
+			timer.schedule(this, getMilsForNext(timeOfDay, timezone));
+			op.run();
+		}
+	}
 
 	/**
 	 * Set an operation to happen daily at midnight UTC
 	 * 
-	 * @param vertx a Vertx instance where the periodic operation will be created
 	 * @param operation the operation to be executed
 	 * @param timeOfDay the time of day to execute the operation
 	 */
-	public static void setDailyOperation(Vertx vertx, Runnable operation) {
-		setDailyOperation(vertx, operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
+	public static void setDailyOperation(Runnable operation) {
+		setDailyOperation(operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
 	}
 
 	/**
 	 * Set an operation to happen daily at a certain time in UTC
 	 * 
-	 * @param vertx a Vertx instance where the periodic operation will be created
 	 * @param operation the operation to be executed
 	 * @param timeOfDay the time of day to execute the operation
 	 */
-	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay) {
-		setDailyOperation(vertx, operation, timeOfDay, ZoneOffset.UTC);
+	public static void setDailyOperation(Runnable operation, LocalTime timeOfDay) {
+		setDailyOperation(operation, timeOfDay, ZoneOffset.UTC);
 	}
 
 	/**
 	 * Set an operation to happen daily at a certain time
 	 * 
-	 * @param vertx a Vertx instance where the periodic operation will be created
 	 * @param operation the operation to be executed
 	 * @param timeOfDay the time of day to execute the operation
 	 * @param timeZone the time zone that the time of day is referenced to
 	 */
-	public static void setDailyOperation(Vertx vertx, Runnable operation, LocalTime timeOfDay, ZoneOffset timeZone) {
-		setPeriodicOperation(vertx, operation, getMilsForNext(timeOfDay, timeZone), TimeUnit.DAYS.toMillis(1));
+	public static void setDailyOperation(Runnable operation, LocalTime timeOfDay, ZoneOffset timezone) {
+		timer.schedule(new RecuringRunnableTask(operation, timeOfDay, timezone), getMilsForNext(timeOfDay, timezone));
 	}
 	
 	/**
 	 * Set an operation to happen daily at a certain time
-	 * @param a Vertx instance where the periodic operation will be created
 	 * @param the operation to be executed
 	 * @param the UNIX epoch time of when to perform the first execution, in milliseconds
 	 * @param the amount of milliseconds between each execution
 	 */
-	public static void setPeriodicOperation(Vertx vertx, Runnable operation, Long firstTime, Long recurrenceEvery) {
-		vertx.setTimer(Math.max(1,  firstTime - Instant.now().toEpochMilli()), id1 -> {
-			operation.run();
-			vertx.setPeriodic(recurrenceEvery, id2 -> {
-				operation.run();
-			});
-		});
+	public static void setPeriodicOperation(Runnable operation, long firstTime, long recurrenceEvery) {
+		timer.schedule(new RunnableTask(operation), new Date(firstTime), recurrenceEvery);
 	}
 	
-	private static Long getMilsForNext(LocalTime timeOfDay, ZoneOffset timeZone) {
-		Long time = LocalDateTime.now().toLocalDate().atTime(timeOfDay).toEpochSecond(timeZone);
-		Long now = Instant.now().getEpochSecond();
-		if (time > now)
-			return time * 1000;
-		return (time * 1000) + TimeUnit.DAYS.toMillis(1);
+	private static Date getMilsForNext(LocalTime timeOfDay, ZoneOffset timezone) {
+		long time = 1000 * LocalDateTime.now().toLocalDate().atTime(timeOfDay).toEpochSecond(timezone);
+		long now = Instant.now().toEpochMilli();
+		if (time <= now)
+			time += TimeUnit.DAYS.toMillis(1);
+		return new Date(time);
 	}
 	
 }
