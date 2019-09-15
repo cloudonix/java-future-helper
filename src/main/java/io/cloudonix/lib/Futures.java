@@ -146,7 +146,6 @@ public class Futures {
 	 * Futures.<JsonArray>fromAsync(h -> api.getArray(h)) // ...
 	 * </code>
 	 * 
-	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
 	 */
@@ -176,7 +175,6 @@ public class Futures {
 	 * Futures.<JsonArray>retryAsyncIf(h -> api.getArray(h), // ...
 	 * </code>
 	 * 
-	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @param predicate a test to check if we need to retry the call. The predicate should return <code>true</code>
 	 * if the call should be retried. 
