@@ -146,7 +146,7 @@ public class Futures {
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
 	 * 
 	 * <code>
-	 * Futures.&lt;JsonArray&gt;fromAsync(h -> api.getArray(h)) // ...
+	 * Futures.&lt;JsonArray&gt;fromAsync(h -&gt; api.getArray(h)) // ...
 	 * </code>
 	 * 
 	 * @param <T> Value type for the callback result
@@ -176,7 +176,7 @@ public class Futures {
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
 	 * 
 	 * <code>
-	 * Futures.&lt;JsonArray&gt;retryAsyncIf(h -> api.getArray(h), // ...
+	 * Futures.&lt;JsonArray&gt;retryAsyncIf(h -&gt; api.getArray(h), // ...
 	 * </code>
 	 * 
 	 * @param <T> Value type for the callback result
