@@ -5,15 +5,15 @@
 
 	<groupId>io.cloudonix</groupId>
 	<artifactId>future-helper</artifactId>
-	<version>1.9.1</version>
+	<version>1.10.0</version>
 	<packaging>jar</packaging>
 
 	<name>FutureHelper</name>
-	<url>http://maven.apache.org</url>
+	<url>https://cloudonix.io</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+		<maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.javadoc.source>1.8</maven.javadoc.source>

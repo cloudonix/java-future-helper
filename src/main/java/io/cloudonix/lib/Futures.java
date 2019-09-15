@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -132,14 +133,22 @@ public class Futures {
 	}
 
 	/**
-	 * Executes a consumer that receives a handler as an argument, and instead of
-	 * executing that handler it will return a CompletableFuture after it finishes
-	 * processing. the handler is stricted to handle AsyncResult.
+	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}.
 	 * 
-	 * @param action
-	 *            the consumer to execute
-	 * @return a CompletableFuture that will be completed after the consumer
-	 *         finished processing
+	 * The action is expected to consume a callback of the required type and provide it as the callback
+	 * (async handler) to the Vert.x-style call. The completion stage returned will be completed when the
+	 * async handler is called with a result: successfully if the result was a success (with the provided result
+	 * as the value) or exceptionally if the result was a failure (with the provided failure as the exception).
+	 * 
+	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
+	 * 
+	 * <code>
+	 * Futures.<JsonArray>fromAsync(h -> api.getArray(h)) // ...
+	 * </code>
+	 * 
+	 * @param <T> Value type for the callback result
+	 * @param action Implementation of the async callback wrapper
+	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
 	 */
 	public static <T> CompletableFuture<T> fromAsync(Consumer<Handler<AsyncResult<T>>> action) {
 		CompletableFuture<T> fut = new CompletableFuture<>();
@@ -150,6 +159,42 @@ public class Futures {
 				fut.complete(res.result());
 		});
 		return fut;
+	}
+	
+	/**
+	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}, possibly retrying
+	 * a failed call.
+	 * 
+	 * The action is expected to consume a callback of the required type and provide it as the callback
+	 * (async handler) to the Vert.x-style call. The completion stage returned will be completed when the
+	 * async handler is called with a result: successfully if the result was a success (with the provided result
+	 * as the value) or exceptionally if the result was a failure (with the provided failure as the exception).
+	 * 
+	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
+	 * 
+	 * <code>
+	 * Futures.<JsonArray>retryAsyncIf(h -> api.getArray(h), // ...
+	 * </code>
+	 * 
+	 * @param <T> Value type for the callback result
+	 * @param action Implementation of the async callback wrapper
+	 * @param predicate a test to check if we need to retry the call. The predicate should return <code>true</code>
+	 * if the call should be retried. 
+	 * @param tries Maximum number of tries to execute.
+	 * @return A promise that resolves when the result is a success or rejects when the result is a failure and
+	 * either there were no more tries or the predicate did not request a retry. If multiple tries where performed,
+	 * the resolution or rejection will be of the last try success or failure.
+	 */
+	public static <T> CompletableFuture<T> retryAsyncIf(Consumer<Handler<AsyncResult<T>>> action, 
+			Predicate<Throwable> predicate, int tries) {
+		return fromAsync(action)
+				.thenApply(CompletableFuture::completedFuture)
+				.exceptionally(exp -> {
+					if (predicate.test(exp))
+						return retryAsyncIf(action, predicate, tries - 1);
+					return CompletableFuture.failedFuture(exp);
+				})
+				.thenCompose(x -> x);
 	}
 
 	/**
