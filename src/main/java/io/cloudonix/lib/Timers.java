@@ -51,7 +51,6 @@ public class Timers {
 	 * Set an operation to happen daily at midnight UTC
 	 * 
 	 * @param operation the operation to be executed
-	 * @param timeOfDay the time of day to execute the operation
 	 */
 	public static void setDailyOperation(Runnable operation) {
 		setDailyOperation(operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
@@ -72,7 +71,7 @@ public class Timers {
 	 * 
 	 * @param operation the operation to be executed
 	 * @param timeOfDay the time of day to execute the operation
-	 * @param timeZone the time zone that the time of day is referenced to
+	 * @param timezone the time zone that the time of day is referenced to
 	 */
 	public static void setDailyOperation(Runnable operation, LocalTime timeOfDay, ZoneOffset timezone) {
 		timer.schedule(new RecuringRunnableTask(operation, timeOfDay, timezone), getMilsForNext(timeOfDay, timezone));
@@ -80,9 +79,9 @@ public class Timers {
 	
 	/**
 	 * Set an operation to happen daily at a certain time
-	 * @param the operation to be executed
-	 * @param the UNIX epoch time of when to perform the first execution, in milliseconds
-	 * @param the amount of milliseconds between each execution
+	 * @param operation the operation to be executed
+	 * @param firstTime the UNIX epoch time of when to perform the first execution, in milliseconds
+	 * @param recurrenceEvery the amount of milliseconds between each execution
 	 */
 	public static void setPeriodicOperation(Runnable operation, long firstTime, long recurrenceEvery) {
 		timer.schedule(new RunnableTask(operation), new Date(firstTime), recurrenceEvery);

@@ -146,7 +146,7 @@ public class Futures {
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
 	 * 
 	 * <code>
-	 * Futures.<JsonArray>fromAsync(h -> api.getArray(h)) // ...
+	 * Futures.&lt;JsonArray&gt;fromAsync(h -> api.getArray(h)) // ...
 	 * </code>
 	 * 
 	 * @param <T> Value type for the callback result
@@ -176,7 +176,7 @@ public class Futures {
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
 	 * 
 	 * <code>
-	 * Futures.<JsonArray>retryAsyncIf(h -> api.getArray(h), // ...
+	 * Futures.&lt;JsonArray&gt;retryAsyncIf(h -> api.getArray(h), // ...
 	 * </code>
 	 * 
 	 * @param <T> Value type for the callback result
@@ -296,8 +296,7 @@ public class Futures {
 	 * Executes CompletableFuture's allOf on a list instead of an array
 	 * 
 	 * @param <G> Value type of the stream's promises
-	 * @param futures
-	 *            the stream to execute allOf on
+	 * @param list the list to execute <code>allOf</code> on
 	 * @return a CompletableFuture that will complete when all completableFutures in
 	 *         the list are completed
 	 */
@@ -396,7 +395,7 @@ public class Futures {
 	}
 
 	/**
-	 * wait for all of the futueres to complete and return a list of their results
+	 * wait for all of the futures to complete and return a list of their results
 	 * 
 	 * @param <G> Value type of the promise arguments
 	 * @param futures
