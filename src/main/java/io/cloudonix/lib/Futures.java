@@ -30,6 +30,7 @@ public class Futures {
 	/**
 	 * Provides a future that was completed exceptionally with the provided error
 	 * 
+	 * @param <T> Value type for the promise
 	 * @param error
 	 *            the error to fail the future with
 	 * @return a future that was completed exceptionally with the provided error
@@ -54,6 +55,7 @@ public class Futures {
 	/**
 	 * Provides a future that was completed successfully with the provided value
 	 * 
+	 * @param <T> Value type for the promise
 	 * @param value
 	 *            the value to complete the future with
 	 * @return a future that was completed successfully with the provided value
@@ -68,6 +70,7 @@ public class Futures {
 	 * Executes a supplier in an asynchronous manner. The supplier can throw
 	 * exceptions
 	 * 
+	 * @param <T> Value type for the promise
 	 * @param sup
 	 *            the supplier to execute
 	 * @return a CompletableFuture that will be completed after the supplier
@@ -146,6 +149,7 @@ public class Futures {
 	 * Futures.<JsonArray>fromAsync(h -> api.getArray(h)) // ...
 	 * </code>
 	 * 
+	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
 	 */
@@ -175,6 +179,7 @@ public class Futures {
 	 * Futures.<JsonArray>retryAsyncIf(h -> api.getArray(h), // ...
 	 * </code>
 	 * 
+	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @param predicate a test to check if we need to retry the call. The predicate should return <code>true</code>
 	 * if the call should be retried. 
@@ -199,6 +204,7 @@ public class Futures {
 	 * Executed an async operation on every item in a list, and return a
 	 * CompletableFuture when all operations on all items are finished processing.
 	 * 
+	 * @param <T> Value type for the list
 	 * @param list
 	 *            the list to operate on
 	 * @param opporation
@@ -216,21 +222,24 @@ public class Futures {
 	}
 
 	/**
-	 * list executeAllAsync only it completes with a list of the
+	 * Execute an async opperation on all elements of the list, returning a promise to the
+	 * converted list
 	 * 
+	 * @param <T> Source list value type
+	 * @param <G> Target list value type 
 	 * @param list
 	 *            the list to operate on
-	 * @param opporation
+	 * @param converter
 	 *            the operation to execute on every item of the list
-	 * @return a CompletableFuture that will complete when all operations on all
+	 * @return a promise that will complete when all operations on all
 	 *         items are finished processing.
 	 */
 	public static <T, G> CompletableFuture<List<G>> executeAllAsyncWithResults(List<T> list,
-			Function<T, CompletableFuture<G>> opporation) {
+			Function<T, CompletableFuture<G>> converter) {
 		List<G> listOfRes = new ArrayList<>();
 		List<CompletableFuture<Void>> fut = new ArrayList<>();
 		for (T u : list) {
-			fut.add(opporation.apply(u).thenAccept(res -> listOfRes.add(res)));
+			fut.add(converter.apply(u).thenAccept(res -> listOfRes.add(res)));
 		}
 		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()])).thenApply(v -> listOfRes);
 	}
@@ -239,6 +248,7 @@ public class Futures {
 	 * Convert a Vert.x async action that cannot fail (takes a {@link Handler}) to a
 	 * Java CompletableFuture
 	 * 
+	 * @param <T> Value type of the handler
 	 * @param action
 	 *            Async action that takes a Vert.x {@link Handler} as a callback.
 	 * @return a CompletableFuture that will complete successfully when the handler
@@ -257,6 +267,7 @@ public class Futures {
 	 * CompletionException holding this exception as its cause. If no
 	 * CompletableFutures are provided, returns an incomplete CompletableFuture.
 	 *
+	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            a stream of CompletableFutures
 	 * @return a new CompletableFuture that is completed with the result or
@@ -271,6 +282,7 @@ public class Futures {
 	/**
 	 * Executes CompletableFuture's allOf on a stream instead of an array
 	 * 
+	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            the stream to execute allOf on
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -283,6 +295,7 @@ public class Futures {
 	/**
 	 * Executes CompletableFuture's allOf on a list instead of an array
 	 * 
+	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            the stream to execute allOf on
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -301,6 +314,7 @@ public class Futures {
 	 * If no futures where provided in the stream (hence no future completed exceptionally or otherwise)
 	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
 	 * 
+	 * @param <G> Value type of the stream's promises
 	 * @param futures {@link Stream} of futures to consider
 	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
 	 */
@@ -334,6 +348,7 @@ public class Futures {
 	 * If no futures where provided in the list (hence no future completed exceptionally or otherwise)
 	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
 	 * 
+	 * @param <G> Value type of the lists's promises
 	 * @param futures {@link List} of futures to consider
 	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
 	 */
@@ -351,6 +366,7 @@ public class Futures {
 	/**
 	 * wait for all of the futures to complete and return a list of their results
 	 * 
+	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            the stream to execute allOf on
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -369,6 +385,7 @@ public class Futures {
 	/**
 	 * wait for all of the futures to complete and return a list of their results
 	 * 
+	 * @param <G> Value type of the list's promises
 	 * @param futures
 	 *            list of CompletableFutures to wait for their completion
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -381,6 +398,7 @@ public class Futures {
 	/**
 	 * wait for all of the futueres to complete and return a list of their results
 	 * 
+	 * @param <G> Value type of the promise arguments
 	 * @param futures
 	 *            the array of CompletableFutures to wait for their completion
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -428,6 +446,7 @@ public class Futures {
 
 	/**
 	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
+	 * @param <T> Value type of the promise
 	 * @param delay delay in milliseconds to impart on the value
 	 * @return A function to be used in @{link {@link CompletableFuture#thenCompose(Function)}
 	 */
