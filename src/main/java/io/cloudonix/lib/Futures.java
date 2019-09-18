@@ -26,6 +26,11 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 public class Futures {
+	
+	public static class Features {
+		public static final boolean ENABLE_ASYNC_CALLSITE_SNAPSHOTS = Boolean.valueOf(System.getProperty(
+				"io.cloudonix.lib.futures.async_callsite_snapshots", "false"));
+	}
 
 	/**
 	 * Provides a future that was completed exceptionally with the provided error
@@ -154,7 +159,7 @@ public class Futures {
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
 	 */
 	public static <T> CompletableFuture<T> fromAsync(Consumer<Handler<AsyncResult<T>>> action) {
-		Exception snapshot = new Exception();
+		Exception snapshot = Features.ENABLE_ASYNC_CALLSITE_SNAPSHOTS ? new Exception() : null;
 		CompletableFuture<T> fut = new CompletableFuture<>();
 		action.accept(res -> {
 			if (res.failed())
@@ -166,6 +171,8 @@ public class Futures {
 	}
 	
 	private static Throwable recodeThrowable(Throwable cause, Exception stSnapshot) {
+		if (Objects.isNull(stSnapshot))
+			return cause;
 		CompletionException recodedTrace = new CompletionException(cause);
 		recodedTrace.setStackTrace(stSnapshot.getStackTrace());
 		return recodedTrace;
