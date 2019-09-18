@@ -154,16 +154,23 @@ public class Futures {
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
 	 */
 	public static <T> CompletableFuture<T> fromAsync(Consumer<Handler<AsyncResult<T>>> action) {
+		Exception snapshot = new Exception();
 		CompletableFuture<T> fut = new CompletableFuture<>();
 		action.accept(res -> {
 			if (res.failed())
-				fut.completeExceptionally(res.cause());
+				fut.completeExceptionally(recodeThrowable(res.cause(), snapshot));
 			else
 				fut.complete(res.result());
 		});
 		return fut;
 	}
 	
+	private static Throwable recodeThrowable(Throwable cause, Exception stSnapshot) {
+		CompletionException recodedTrace = new CompletionException(cause);
+		recodedTrace.setStackTrace(stSnapshot.getStackTrace());
+		return recodedTrace;
+	}
+
 	/**
 	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}, possibly retrying
 	 * a failed call.
