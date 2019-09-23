@@ -5,7 +5,7 @@
 
 	<groupId>io.cloudonix</groupId>
 	<artifactId>future-helper</artifactId>
-	<version>1.11.0</version>
+	<version>1.11.1</version>
 	<packaging>jar</packaging>
 
 	<name>FutureHelper</name>
@@ -23,7 +23,7 @@
 		<dependency>
 			<groupId>io.vertx</groupId>
 			<artifactId>vertx-core</artifactId>
-			<version>(3.5,)</version>
+			<version>[3.5,3.999)</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
