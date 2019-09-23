@@ -104,6 +104,7 @@ public class Futures {
 			throw except;
 		}
 
+		@SuppressWarnings("deprecation")
 		public static void spit(Throwable t) {
 			except = t;
 			try {
