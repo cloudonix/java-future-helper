@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 public class Timers {
 	
-	public static Timer timer = new Timer("cxlib-timer", true);
+	private static final Timer timer = new Timer("cxlib-timer", true);
 	
 	static class RunnableTask extends TimerTask {
 		private Runnable op;
@@ -17,7 +17,12 @@ public class Timers {
 		}
 		@Override
 		public void run() {
-			op.run();
+			try {
+				op.run();
+			} catch (Throwable t) {
+				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
+				t.printStackTrace();
+			}
 		}
 	}
 	
@@ -34,7 +39,12 @@ public class Timers {
 		@Override
 		public void run() {
 			timer.schedule(this, getMilsForNext(timeOfDay, timezone));
-			op.run();
+			try {
+				op.run();
+			} catch (Throwable t) {
+				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
+				t.printStackTrace();
+			}
 		}
 	}
 
