@@ -58,6 +58,16 @@ public class Timers {
 	}
 
 	/**
+	 * Schedule a one time operation
+	 * @param operation the operation to be executed
+	 * @param timeUnit Unit to measure the delay in
+	 * @param delay number of time units to wait before invoking the operation
+	 */
+	public static void schedule(Runnable operation, TimeUnit timeUnit, int delay) {
+		timer.schedule(new RunnableTask(operation), timeUnit.toMillis(delay));
+	}
+
+	/**
 	 * Set an operation to happen daily at midnight UTC
 	 * 
 	 * @param operation the operation to be executed
