@@ -26,7 +26,7 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 
 public class Futures {
-	
+
 	public static class Features {
 		public static final boolean ENABLE_ASYNC_CALLSITE_SNAPSHOTS = Boolean.valueOf(System.getProperty(
 				"io.cloudonix.lib.futures.async_callsite_snapshots", "false"));
@@ -34,7 +34,7 @@ public class Futures {
 
 	/**
 	 * Provides a future that was completed exceptionally with the provided error
-	 * 
+	 *
 	 * @param <T> Value type for the promise
 	 * @param error
 	 *            the error to fail the future with
@@ -48,7 +48,7 @@ public class Futures {
 
 	/**
 	 * Provides a future that was completed with null
-	 * 
+	 *
 	 * @return a future that was completed with null
 	 */
 	public static CompletableFuture<Void> completedFuture() {
@@ -59,7 +59,7 @@ public class Futures {
 
 	/**
 	 * Provides a future that was completed successfully with the provided value
-	 * 
+	 *
 	 * @param <T> Value type for the promise
 	 * @param value
 	 *            the value to complete the future with
@@ -74,7 +74,7 @@ public class Futures {
 	/**
 	 * Executes a supplier in an asynchronous manner. The supplier can throw
 	 * exceptions
-	 * 
+	 *
 	 * @param <T> Value type for the promise
 	 * @param sup
 	 *            the supplier to execute
@@ -113,7 +113,7 @@ public class Futures {
 			}
 		}
 	}
-	
+
 	@FunctionalInterface
 	public interface ThrowingFunction<U,V> {
 		V apply(U value) throws Throwable;
@@ -143,18 +143,18 @@ public class Futures {
 
 	/**
 	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}.
-	 * 
+	 *
 	 * The action is expected to consume a callback of the required type and provide it as the callback
 	 * (async handler) to the Vert.x-style call. The completion stage returned will be completed when the
 	 * async handler is called with a result: successfully if the result was a success (with the provided result
 	 * as the value) or exceptionally if the result was a failure (with the provided failure as the exception).
-	 * 
+	 *
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
-	 * 
+	 *
 	 * <code>
 	 * Futures.&lt;JsonArray&gt;fromAsync(h -&gt; api.getArray(h)) // ...
 	 * </code>
-	 * 
+	 *
 	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure
@@ -170,7 +170,7 @@ public class Futures {
 		});
 		return fut;
 	}
-	
+
 	private static Throwable recodeThrowable(Throwable cause, Exception stSnapshot) {
 		if (Objects.isNull(stSnapshot))
 			return cause;
@@ -182,35 +182,35 @@ public class Futures {
 	/**
 	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}, possibly retrying
 	 * a failed call.
-	 * 
+	 *
 	 * The action is expected to consume a callback of the required type and provide it as the callback
 	 * (async handler) to the Vert.x-style call. The completion stage returned will be completed when the
 	 * async handler is called with a result: successfully if the result was a success (with the provided result
 	 * as the value) or exceptionally if the result was a failure (with the provided failure as the exception).
-	 * 
+	 *
 	 * Because of deficiencies in Java's generic type resolution, the call must be specialized manually. For example:
-	 * 
+	 *
 	 * <code>
 	 * Futures.&lt;JsonArray&gt;retryAsyncIf(h -&gt; api.getArray(h), // ...
 	 * </code>
-	 * 
+	 *
 	 * @param <T> Value type for the callback result
 	 * @param action Implementation of the async callback wrapper
 	 * @param predicate a test to check if we need to retry the call. The predicate should return <code>true</code>
-	 * if the call should be retried. 
+	 * if the call should be retried.
 	 * @param tries Maximum number of tries to execute.
 	 * @return A promise that resolves when the result is a success or rejects when the result is a failure and
 	 * either there were no more tries or the predicate did not request a retry. If multiple tries where performed,
 	 * the resolution or rejection will be of the last try success or failure.
 	 */
-	public static <T> CompletableFuture<T> retryAsyncIf(Consumer<Handler<AsyncResult<T>>> action, 
+	public static <T> CompletableFuture<T> retryAsyncIf(Consumer<Handler<AsyncResult<T>>> action,
 			Predicate<Throwable> predicate, int tries) {
 		return fromAsync(action)
 				.thenApply(CompletableFuture::completedFuture)
 				.exceptionally(exp -> {
 					if (tries > 0 && predicate.test(exp))
 						return retryAsyncIf(action, predicate, tries - 1);
-					return CompletableFuture.failedFuture(exp);
+					return failedFuture(exp);
 				})
 				.thenCompose(x -> x);
 	}
@@ -218,7 +218,7 @@ public class Futures {
 	/**
 	 * Executed an async operation on every item in a list, and return a
 	 * CompletableFuture when all operations on all items are finished processing.
-	 * 
+	 *
 	 * @param <T> Value type for the list
 	 * @param list
 	 *            the list to operate on
@@ -239,9 +239,9 @@ public class Futures {
 	/**
 	 * Execute an async opperation on all elements of the list, returning a promise to the
 	 * converted list
-	 * 
+	 *
 	 * @param <T> Source list value type
-	 * @param <G> Target list value type 
+	 * @param <G> Target list value type
 	 * @param list
 	 *            the list to operate on
 	 * @param converter
@@ -262,7 +262,7 @@ public class Futures {
 	/**
 	 * Convert a Vert.x async action that cannot fail (takes a {@link Handler}) to a
 	 * Java CompletableFuture
-	 * 
+	 *
 	 * @param <T> Value type of the handler
 	 * @param action
 	 *            Async action that takes a Vert.x {@link Handler} as a callback.
@@ -296,7 +296,7 @@ public class Futures {
 
 	/**
 	 * Executes CompletableFuture's allOf on a stream instead of an array
-	 * 
+	 *
 	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            the stream to execute allOf on
@@ -309,7 +309,7 @@ public class Futures {
 
 	/**
 	 * Executes CompletableFuture's allOf on a list instead of an array
-	 * 
+	 *
 	 * @param <G> Value type of the stream's promises
 	 * @param list the list to execute <code>allOf</code> on
 	 * @return a CompletableFuture that will complete when all completableFutures in
@@ -318,19 +318,19 @@ public class Futures {
 	public static <G> CompletableFuture<Void> allOf(List<CompletableFuture<G>> list) {
 		return CompletableFuture.allOf(list.toArray(new CompletableFuture[list.size()]));
 	}
-	
+
 	/**
 	 * Returns a new CompletableFuture that is completed when the first future in the stream
 	 * completes, with that future's completion value. If all of the futures in the stream completed
 	 * exceptionally, then returned CompletableFuture is completed exceptionally with the exception
 	 * with which the last future completed exceptionally (chronologically, not in order).
-	 * 
+	 *
 	 * If no futures where provided in the stream (hence no future completed exceptionally or otherwise)
 	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
-	 * 
+	 *
 	 * @param <G> Value type of the stream's promises
 	 * @param futures {@link Stream} of futures to consider
-	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
+	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully
 	 */
 	public static <G> CompletableFuture<G> resolveAny(Stream<CompletableFuture<G>> futures) {
 		AtomicReference<Throwable> lastFailure = new AtomicReference<>();
@@ -352,24 +352,24 @@ public class Futures {
 			});
 		return res;
 	}
-	
+
 	/**
 	 * Returns a new CompletableFuture that is completed when the first future in the list
 	 * completes, with that future's completion value. If all of the futures in the list completed
 	 * exceptionally, then returned CompletableFuture is completed exceptionally with the exception
 	 * with which the last future completed exceptionally (chronologically, not in order).
-	 * 
+	 *
 	 * If no futures where provided in the list (hence no future completed exceptionally or otherwise)
 	 * the returned CompletableFuture completes exceptionally with the {@link NoSuchElementException} exception.
-	 * 
+	 *
 	 * @param <G> Value type of the lists's promises
 	 * @param futures {@link List} of futures to consider
-	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully 
+	 * @return A {@link CompletableFuture} that completes when the first future from the stream completes successfully
 	 */
 	public static <G> CompletableFuture<G> resolveAny(List<CompletableFuture<G>> futures) {
 		return resolveAny(futures.stream());
 	}
-	
+
 	private static class Holder<T> {
 		T value;
 		public Holder(T val) {
@@ -379,7 +379,7 @@ public class Futures {
 
 	/**
 	 * wait for all of the futures to complete and return a list of their results
-	 * 
+	 *
 	 * @param <G> Value type of the stream's promises
 	 * @param futures
 	 *            the stream to execute allOf on
@@ -398,7 +398,7 @@ public class Futures {
 
 	/**
 	 * wait for all of the futures to complete and return a list of their results
-	 * 
+	 *
 	 * @param <G> Value type of the list's promises
 	 * @param futures
 	 *            list of CompletableFutures to wait for their completion
@@ -411,7 +411,7 @@ public class Futures {
 
 	/**
 	 * wait for all of the futures to complete and return a list of their results
-	 * 
+	 *
 	 * @param <G> Value type of the promise arguments
 	 * @param futures
 	 *            the array of CompletableFutures to wait for their completion
@@ -422,7 +422,7 @@ public class Futures {
 	public static <G> CompletableFuture<List<G>> resolveAll(CompletableFuture<G>... futures) {
 		return resolveAll(Arrays.stream(futures));
 	}
-	
+
 	/**
 	 * Add streaming collector to make stream resolving nicer
 	 * @param <G> The type of futures resolved by this stream
@@ -454,7 +454,7 @@ public class Futures {
 			public Set<Characteristics> characteristics() {
 				return Collections.singleton(Characteristics.CONCURRENT);
 			}
-			
+
 		};
 	}
 
