@@ -16,37 +16,37 @@ stages:
 
 test-jdk-8:
   stage: test
-  image: 3-jdk-8-slim
+  image: maven:3-jdk-8-slim
   script:
     - mvn -B test
 
 test-jdk-9:
   stage: test
-  image: 3-jdk-9-slim
+  image: maven:3-jdk-9-slim
   script:
     - mvn -B test
 
 test-jdk-10:
   stage: test
-  image: 3-jdk-10-slim
+  image: maven:3-jdk-10-slim
   script:
     - mvn -B test
 
 test-jdk-11:
   stage: test
-  image: 3-jdk-11-slim
-  script:
-    - mvn -B test
-
-test-jdk-13:
-  stage: test
-  image: 3-jdk-13-slim
+  image: maven:3-jdk-11-slim
   script:
     - mvn -B test
 
 test-jdk-12:
   stage: test
-  image: 3-jdk-12-slim
+  image: maven:3-jdk-12-slim
+  script:
+    - mvn -B test
+
+test-jdk-13:
+  stage: test
+  image: maven:3-jdk-13-slim
   script:
     - mvn -B test
 
