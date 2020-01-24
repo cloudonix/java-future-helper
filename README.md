@@ -11,7 +11,7 @@ in the public Maven repository) as an element under `<project>`:
 <repositories>
   <repository>
     <id>cloudonix-dist</id>
-    <url>http://cloudonix-dist.s3-website-us-west-1.amazonaws.com/maven2/releases</url>
+    <url>https://cloudonix-dist.s3.amazonaws.com/maven2/releases</url>
   </repository>
 </repositories>
 ```
