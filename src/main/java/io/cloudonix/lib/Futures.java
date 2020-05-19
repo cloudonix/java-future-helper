@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
 public class Futures {
@@ -469,6 +471,28 @@ public class Futures {
 		return value -> {
 			Timers.schedule(() -> future.complete(value), delay);
 			return future;
+		};
+	}
+
+	/**
+	 * This method can be used to forward the result (success or failure) of a CompletableFuture chain to a 
+	 * Vert.x Future/Promise. This method returns a BiFunction for {@link CompletableFuture#handle(BiFunction)}.
+	 * 
+	 * After forwarding the chain is expected to terminate - the following completion stage, if set, will be run with
+	 * a null value that only signals that the Vert.x future received the result, and have no meaning other than that.
+	 * 
+	 * Example:
+	 * <code>
+	 * stage.toCompletableFuture().handle(Futures.forward(vertxPromise::handle));
+	 * </code>
+	 * @param <T> The value type for the Vert.x handler
+	 * @param destination The Vert.x handler - this should be Future/Promise::handle 
+	 * @return a BiFunction that returns a Void null for use in a terminating CompletableFuture.handle()
+	 */
+	public static <T> BiFunction<T, Throwable, Void> forward(Consumer<AsyncResult<T>> destination) {
+		return (v,t) -> { 
+			destination.accept(t == null ? Future.succeededFuture(v) : Future.failedFuture(t));
+			return null;
 		};
 	}
 }
