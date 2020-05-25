@@ -36,10 +36,17 @@ public class Timers {
 			this.timeOfDay = timeOfDay;
 			this.timezone = timezone;
 		}
+		
+		private RecuringRunnableTask(RecuringRunnableTask parent) {
+			op = parent.op;
+			timeOfDay = parent.timeOfDay;
+			timezone = parent.timezone;
+		}
+		
 		@Override
 		public void run() {
-			timer.schedule(this, getMilsForNext(timeOfDay, timezone));
 			try {
+				timer.schedule(new RecuringRunnableTask(this), getMilsForNext(timeOfDay, timezone));
 				op.run();
 			} catch (Throwable t) {
 				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
