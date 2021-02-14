@@ -33,7 +33,7 @@ public class Futures {
 		public static final boolean ENABLE_ASYNC_CALLSITE_SNAPSHOTS = Boolean.valueOf(System.getProperty(
 				"io.cloudonix.lib.futures.async_callsite_snapshots", "false"));
 	}
-
+	
 	/**
 	 * Provides a future that was completed exceptionally with the provided error
 	 *
@@ -165,10 +165,12 @@ public class Futures {
 		Exception snapshot = Features.ENABLE_ASYNC_CALLSITE_SNAPSHOTS ? new Exception() : null;
 		CompletableFuture<T> fut = new CompletableFuture<>();
 		action.accept(res -> {
-			if (res.failed())
-				fut.completeExceptionally(recodeThrowable(res.cause(), snapshot));
-			else
-				fut.complete(res.result());
+			CompletableFuture.runAsync(() -> {
+				if (res.failed())
+					fut.completeExceptionally(recodeThrowable(res.cause(), snapshot));
+				else
+					fut.complete(res.result());
+			});
 		});
 		return fut;
 	}
