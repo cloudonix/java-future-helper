@@ -224,41 +224,35 @@ public class Futures {
 	 * CompletableFuture when all operations on all items are finished processing.
 	 *
 	 * @param <T> Value type for the list
-	 * @param list
-	 *            the list to operate on
-	 * @param opporation
-	 *            the operation to execute on every item of the list
-	 * @return a CompletableFuture that will complete when all operations on all
-	 *         items are finished processing.
+	 * @param list the list to operate on
+	 * @param operation the operation to execute on every item of the list
+	 * @return a CompletableFuture that will complete when all operations on all items are finished processing.
 	 */
 	public static <T> CompletableFuture<Void> executeAllAsync(List<T> list,
-			Function<T, CompletableFuture<Void>> opporation) {
+			Function<T, CompletableFuture<Void>> operation) {
 		List<CompletableFuture<Void>> fut = new ArrayList<>();
 		for (T u : list) {
-			fut.add(opporation.apply(u));
+			fut.add(operation.apply(u));
 		}
 		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()]));
 	}
 
 	/**
-	 * Execute an async opperation on all elements of the list, returning a promise to the
+	 * Execute an async operation on all elements of the list, returning a promise to the
 	 * converted list
 	 *
 	 * @param <T> Source list value type
 	 * @param <G> Target list value type
-	 * @param list
-	 *            the list to operate on
-	 * @param converter
-	 *            the operation to execute on every item of the list
-	 * @return a promise that will complete when all operations on all
-	 *         items are finished processing.
+	 * @param list the list to operate on
+	 * @param operation the operation to execute on every item of the list
+	 * @return a promise that will complete when all operations on all items are finished processing.
 	 */
 	public static <T, G> CompletableFuture<List<G>> executeAllAsyncWithResults(List<T> list,
-			Function<T, CompletableFuture<G>> converter) {
+			Function<T, CompletableFuture<G>> operation) {
 		List<G> listOfRes = new ArrayList<>();
 		List<CompletableFuture<Void>> fut = new ArrayList<>();
 		for (T u : list) {
-			fut.add(converter.apply(u).thenAccept(res -> listOfRes.add(res)));
+			fut.add(operation.apply(u).thenAccept(res -> listOfRes.add(res)));
 		}
 		return CompletableFuture.allOf(fut.toArray(new CompletableFuture[fut.size()])).thenApply(v -> listOfRes);
 	}
