@@ -212,7 +212,7 @@ public class Futures {
 		return fromAsync(action)
 				.thenApply(CompletableFuture::completedFuture)
 				.exceptionally(exp -> {
-					if (tries > 0 && predicate.test(exp))
+					if ((tries - 1) > 0 && predicate.test(exp))
 						return retryAsyncIf(action, predicate, tries - 1);
 					return failedFuture(exp);
 				})
