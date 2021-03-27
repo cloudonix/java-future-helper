@@ -2,6 +2,7 @@ package io.cloudonix.lib;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -423,29 +424,29 @@ public class Futures {
 	}
 
 	/**
-	 * Add streaming collector to make stream resolving nicer
+	 * Create a stream collector to help resolve a stream of promises for values to a promise to a list of values
 	 * @param <G> The type of futures resolved by this stream
 	 * @return a collector that collects a stream of futures to a future list
 	 */
-	public static <G> Collector<CompletableFuture<G>, Queue<CompletableFuture<G>>, CompletableFuture<List<G>>> resolvingCollector() {
-		return new Collector<CompletableFuture<G>, Queue<CompletableFuture<G>>, CompletableFuture<List<G>>>(){
+	public static <G> Collector<CompletableFuture<G>, Collection<CompletableFuture<G>>, CompletableFuture<List<G>>> resolvingCollector() {
+		return new Collector<CompletableFuture<G>, Collection<CompletableFuture<G>>, CompletableFuture<List<G>>>(){
 			@Override
-			public Supplier<Queue<CompletableFuture<G>>> supplier() {
+			public Supplier<Collection<CompletableFuture<G>>> supplier() {
 				return ConcurrentLinkedQueue<CompletableFuture<G>>::new;
 			}
 
 			@Override
-			public BiConsumer<Queue<CompletableFuture<G>>, CompletableFuture<G>> accumulator() {
-				return Queue::add;
+			public BiConsumer<Collection<CompletableFuture<G>>, CompletableFuture<G>> accumulator() {
+				return Collection::add;
 			}
 
 			@Override
-			public BinaryOperator<Queue<CompletableFuture<G>>> combiner() {
+			public BinaryOperator<Collection<CompletableFuture<G>>> combiner() {
 				return (a,b) -> { a.addAll(b); return a; };
 			}
 
 			@Override
-			public Function<Queue<CompletableFuture<G>>, CompletableFuture<List<G>>> finisher() {
+			public Function<Collection<CompletableFuture<G>>, CompletableFuture<List<G>>> finisher() {
 				return q -> resolveAll(q.stream());
 			}
 
@@ -455,6 +456,18 @@ public class Futures {
 			}
 
 		};
+	}
+	
+	/**
+	 * Create a stream collector to help resolve a stream of promises for values to a stream of values.
+	 * Beware: this API does not leave a lot of room for handling errors gracefully. If any of the promises in the input
+	 * stream fail, it would cause the resulting stream to throw a {@link CompletionException} somewhere through the processing
+	 * of the resulting stream - the exact timing is hard to predict due to how streams operate.
+	 * @param <G> The type of futures resolved by this stream
+	 * @return a collector that collects a stream of futures to a stream of values
+	 */
+	public static <G> Collector<CompletableFuture<G>, Collection<?>, Stream<G>> resolvingCollectorToStream() {
+		return new StreamFutureResolver<>();
 	}
 
 	/**
