@@ -21,7 +21,7 @@ Then add the dependency with the version you want to use:
 	<dependency>
 	    <groupId>com.github.cloudonix</groupId>
 	    <artifactId>java-future-helper</artifactId>
-	    <version>1.14.3</version>
+	    <version>1.15.0</version>
 	</dependency>
 ```
 
