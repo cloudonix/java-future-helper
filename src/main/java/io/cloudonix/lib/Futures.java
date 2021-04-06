@@ -249,8 +249,8 @@ public class Futures {
 	 */
 	public static <T, G> CompletableFuture<List<G>> executeAllAsyncWithResults(List<T> list,
 			Function<T, CompletableFuture<G>> operation) {
-		List<G> listOfRes = new ArrayList<>(list.size());
-		List<CompletableFuture<Void>> fut = new ArrayList<>(list.size());
+		List<G> listOfRes = new ArrayList<>(Collections.nCopies(list.size(), null));
+		List<CompletableFuture<Void>> fut = new ArrayList<>(Collections.nCopies(list.size(), null));
 		for (int i = 0; i < list.size(); i++) {
 			int j = i;
 			fut.set(i, operation.apply(list.get(i)).thenAccept(res -> listOfRes.set(j, res)));
