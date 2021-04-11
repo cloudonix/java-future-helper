@@ -10,8 +10,21 @@ public class Timers {
 	
 	private static final Timer timer = new Timer("cxlib-timer", true);
 	
-	static class RunnableTask extends TimerTask {
-		private Runnable op;
+	/**
+	 * Public API for canceling future schedules
+	 * @author odeda
+	 */
+	public interface Cancellable {
+		/**
+		 * Cancel the future schedule
+		 * @return true if the cancellation prevents future execution (i.e. return <code>false</code> if 
+		 * called on a single-use task that was already run)
+		 */
+		boolean cancel();
+	}
+	
+	static class RunnableTask extends TimerTask implements Cancellable {
+		protected Runnable op;
 		private RunnableTask(Runnable run) {
 			op = run;
 		}
@@ -26,19 +39,18 @@ public class Timers {
 		}
 	}
 	
-	static class RecuringRunnableTask extends TimerTask {
-		private Runnable op;
+	static class RecuringRunnableTask extends RunnableTask implements Cancellable {
 		private LocalTime timeOfDay;
 		private ZoneOffset timezone;
 
 		private RecuringRunnableTask(Runnable run, LocalTime timeOfDay, ZoneOffset timezone) {
-			op = run;
+			super(run);
 			this.timeOfDay = timeOfDay;
 			this.timezone = timezone;
 		}
 		
 		private RecuringRunnableTask(RecuringRunnableTask parent) {
-			op = parent.op;
+			super(parent.op);
 			timeOfDay = parent.timeOfDay;
 			timezone = parent.timezone;
 		}
@@ -46,7 +58,7 @@ public class Timers {
 		@Override
 		public void run() {
 			try {
-				timer.schedule(new RecuringRunnableTask(this), getMilsForNext(timeOfDay, timezone));
+				schedule(new RecuringRunnableTask(this), getMilsForNext(timeOfDay, timezone));
 				op.run();
 			} catch (Throwable t) {
 				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
@@ -60,8 +72,8 @@ public class Timers {
 	 * @param operation the operation to be executed
 	 * @param delay number of milliseconds to wait before invoking the operation
 	 */
-	public static void schedule(Runnable operation, long delay) {
-		timer.schedule(new RunnableTask(operation), delay);
+	public static Cancellable schedule(Runnable operation, long delay) {
+		return schedule(new RunnableTask(operation), delay);
 	}
 
 	/**
@@ -70,8 +82,8 @@ public class Timers {
 	 * @param timeUnit Unit to measure the delay in
 	 * @param delay number of time units to wait before invoking the operation
 	 */
-	public static void schedule(Runnable operation, TimeUnit timeUnit, int delay) {
-		timer.schedule(new RunnableTask(operation), timeUnit.toMillis(delay));
+	public static Cancellable schedule(Runnable operation, TimeUnit timeUnit, int delay) {
+		return schedule(operation, timeUnit.toMillis(delay));
 	}
 
 	/**
@@ -79,8 +91,8 @@ public class Timers {
 	 * 
 	 * @param operation the operation to be executed
 	 */
-	public static void setDailyOperation(Runnable operation) {
-		setDailyOperation(operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
+	public static Cancellable setDailyOperation(Runnable operation) {
+		return setDailyOperation(operation, LocalTime.MIDNIGHT, ZoneOffset.UTC);
 	}
 
 	/**
@@ -89,8 +101,8 @@ public class Timers {
 	 * @param operation the operation to be executed
 	 * @param timeOfDay the time of day to execute the operation
 	 */
-	public static void setDailyOperation(Runnable operation, LocalTime timeOfDay) {
-		setDailyOperation(operation, timeOfDay, ZoneOffset.UTC);
+	public static Cancellable setDailyOperation(Runnable operation, LocalTime timeOfDay) {
+		return setDailyOperation(operation, timeOfDay, ZoneOffset.UTC);
 	}
 
 	/**
@@ -100,8 +112,18 @@ public class Timers {
 	 * @param timeOfDay the time of day to execute the operation
 	 * @param timezone the time zone that the time of day is referenced to
 	 */
-	public static void setDailyOperation(Runnable operation, LocalTime timeOfDay, ZoneOffset timezone) {
-		timer.schedule(new RecuringRunnableTask(operation, timeOfDay, timezone), getMilsForNext(timeOfDay, timezone));
+	public static Cancellable setDailyOperation(Runnable operation, LocalTime timeOfDay, ZoneOffset timezone) {
+		return schedule(new RecuringRunnableTask(operation, timeOfDay, timezone), getMilsForNext(timeOfDay, timezone));
+	}
+	
+	public static Cancellable schedule(RunnableTask operation, long delay) {
+		timer.schedule(operation, delay);
+		return operation;
+	}
+	
+	public static Cancellable schedule(RunnableTask operation, Date time) {
+		timer.schedule(operation, time);
+		return operation;
 	}
 	
 	/**
@@ -110,8 +132,10 @@ public class Timers {
 	 * @param firstTime the UNIX epoch time of when to perform the first execution, in milliseconds
 	 * @param recurrenceEvery the amount of milliseconds between each execution
 	 */
-	public static void setPeriodicOperation(Runnable operation, long firstTime, long recurrenceEvery) {
-		timer.schedule(new RunnableTask(operation), new Date(firstTime), recurrenceEvery);
+	public static Cancellable setPeriodicOperation(Runnable operation, long firstTime, long recurrenceEvery) {
+		RunnableTask task = new RunnableTask(operation);
+		timer.schedule(task, new Date(firstTime), recurrenceEvery);
+		return task;
 	}
 	
 	private static Date getMilsForNext(LocalTime timeOfDay, ZoneOffset timezone) {

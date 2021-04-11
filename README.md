@@ -21,7 +21,7 @@ Then add the dependency with the version you want to use:
 	<dependency>
 	    <groupId>com.github.cloudonix</groupId>
 	    <artifactId>java-future-helper</artifactId>
-	    <version>1.15.0</version>
+	    <version>2.0.0</version>
 	</dependency>
 ```
 
@@ -213,11 +213,11 @@ All of the methods in the `Timers` class execute their scheduled tasks on a sing
 
 Please note that there are currently no APIs to cancel schedule or recurring tasks.
 
-#### `Timers.schedule(Runnable operation, long delay);
+#### `Timers.schedule(Runnable operation, long delay);`
 
 Schedule the specified operation to be executed after the specified delay in milliseconds.
 
-#### `Timers.schedule(Runnable operation, TimeUnit timeUnit, int delay);
+#### `Timers.schedule(Runnable operation, TimeUnit timeUnit, int delay);`
 
 Schedule the specified operation to be executed after the specified delay in the specified time unit.
 
@@ -242,6 +242,8 @@ For example, to schedule an occurrence every hour from now on:
 ```java
 Timers.setPeriodicOperation(() -> System.out.println("Hello"), 0, TimeUnit.HOURS.toMillis(1));
 ```
+
+All the `Timers` methods return an instance of `Timers.Cancellable` that can be used to cancel the scheduled task - if it had not already finished executing. For periodic operations, the `Timers.Cancellable` can be used to prevent future executions even after the operation have already been executed one or more times.
 
 ## Notes
 
