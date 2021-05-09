@@ -7,10 +7,15 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.UnmappableCharacterException;
+import java.util.concurrent.CompletionException;
 
 import org.junit.Test;
 
 public class TestFutureExceptions {
+	
+	static {
+		System.out.println("Testing future helper with JDK " + System.getProperty("java.version"));
+	}
 	
 	@Test
 	public void testOnSkipping() {
@@ -117,6 +122,33 @@ public class TestFutureExceptions {
 		.whenComplete((t,i) -> {
 			assertNull(t);
 			assertEquals("guard", i);
+		});
+	}
+	
+	@Test
+	public void testHandleWrappedException() {
+		Futures.failedFuture(new CompletionException("wrapper", new CheckedException("internal")))
+		.exceptionally(Futures.on(CheckedException.class, CheckedException::getValue))
+		.whenComplete((t,i) -> {
+			assertNull(t);
+			assertEquals("internal", i);
+		});
+	}
+	
+	public static class CustomWrappingException extends Exception {
+		private static final long serialVersionUID = 1L;
+		public CustomWrappingException(Exception cause) {
+			super(cause);
+		}
+	}
+	
+	@Test
+	public void testHandleDoubleWrappedExceptions() {
+		Futures.failedFuture(new CompletionException("wrapper", new CustomWrappingException(new CheckedException("internal"))))
+		.exceptionally(Futures.on(CheckedException.class, CheckedException::getValue))
+		.whenComplete((t,i) -> {
+			assertNull(t);
+			assertEquals("internal", i);
 		});
 	}
 }
