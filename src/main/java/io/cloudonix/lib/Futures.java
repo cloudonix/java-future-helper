@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -481,6 +482,122 @@ public class Futures {
 			Timers.schedule(() -> future.complete(value), delay);
 			return future;
 		};
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
+	 * @param <T> type of source values
+	 * @param <G> expected type of async operation result
+	 * @param source list of source values
+	 * @param mapper mapping operation
+	 * @return a promise that will resolve with the list of results, if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T,G> CompletableFuture<List<G>> resolveConsecutively(List<T> source, Function<T, CompletableFuture<G>> mapper) {
+		return resolveConsecutively(source.stream(), mapper, true);
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully - 
+	 * or if <code>false</code> is provided as the last argument - after it has rejected
+	 * @param <T> type of source values
+	 * @param <G> expected type of async operation result
+	 * @param source list of source values
+	 * @param mapper mapping operation
+	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
+	 * @return a promise that will resolve with the list of results, if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T,G> CompletableFuture<List<G>> resolveConsecutively(List<T> source, Function<T, CompletableFuture<G>> mapper, boolean stopOnFailure) {
+		return resolveConsecutively(source.stream(), mapper, stopOnFailure);
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
+	 * @param <T> type of source values
+	 * @param <G> expected type of async operation result
+	 * @param source stream of source values
+	 * @param mapper mapping operation
+	 * @return a promise that will resolve with the list of results, if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T,G> CompletableFuture<List<G>> resolveConsecutively(Stream<T> source, Function<T, CompletableFuture<G>> mapper) {
+		return resolveConsecutively(source, mapper, true);
+	}
+
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully - 
+	 * or if <code>false</code> is provided as the last argument - after it has rejected
+	 * @param <T> type of source values
+	 * @param <G> expected type of async operation result
+	 * @param source stream of source values
+	 * @param mapper mapping operation
+	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
+	 * @return a promise that will resolve with the list of results, if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T,G> CompletableFuture<List<G>> resolveConsecutively(Stream<T> source, Function<T, CompletableFuture<G>> mapper, boolean stopOnFailure) {
+		ConcurrentLinkedQueue<G> buffer = new ConcurrentLinkedQueue<G>();
+		return consecutively(source, mapper.andThen(f -> f.thenAccept(buffer::add)))
+				.thenApply(v -> buffer.stream().collect(Collectors.toList()));
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
+	 * @param <T> type of source values
+	 * @param source list of source values
+	 * @param mapper mapping operation
+	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T> CompletableFuture<Void> consecutively(List<T> source, Function<T, CompletableFuture<Void>> operation) {
+		return consecutively(source, operation, true);
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully - 
+	 * or if <code>false</code> is provided as the last argument - after it has rejected
+	 * @param <T> type of source values
+	 * @param source list of source values
+	 * @param mapper mapping operation
+	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
+	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T> CompletableFuture<Void> consecutively(List<T> source, Function<T, CompletableFuture<Void>> operation, boolean stopOnFailure) {
+		return consecutively(source, operation, stopOnFailure);
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
+	 * @param <T> type of source values
+	 * @param source stream of source values
+	 * @param mapper mapping operation
+	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T> CompletableFuture<Void> consecutively(Stream<T> source, Function<T, CompletableFuture<Void>> operation) {
+		return consecutively(source, operation, true);
+	}
+	
+	/**
+	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully - 
+	 * or if <code>false</code> is provided as the last argument - after it has rejected
+	 * @param <T> type of source values
+	 * @param source stream of source values
+	 * @param mapper mapping operation
+	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
+	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
+	 */
+	public static <T> CompletableFuture<Void> consecutively(Stream<T> source, Function<T, CompletableFuture<Void>> operation, boolean stopOnFailure) {
+		CompletableFuture<Void> next = CompletableFuture.completedFuture(null);
+		AtomicReference<Throwable> firstError = new AtomicReference<>(null);
+		Function <T,CompletableFuture<Void>> wrapper = stopOnFailure ? operation : 
+			operation.andThen(v -> v.exceptionally(t -> { firstError.compareAndSet(null, t); return null; }));
+		for (T val : new Iterable<T>() { public Iterator<T> iterator() { return source.iterator(); }}) {
+			next = next.thenCompose(v -> wrapper.apply(val));
+		}
+		return next.thenCompose(v -> {
+			if (firstError.get() == null)
+				return CompletableFuture.completedFuture(null);
+			// I wish they'd thought about failedFuture() for JDK 9
+			CompletableFuture<Void> failedResult = new CompletableFuture<>();
+			failedResult.completeExceptionally(firstError.get());
+			return failedResult;
+		});
 	}
 
 	/**
