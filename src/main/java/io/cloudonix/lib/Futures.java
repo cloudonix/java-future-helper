@@ -28,9 +28,22 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+/**
+ * Set of static function to help work with Java's {@link CompletableFuture} and Vert.x async callbacks (@{link {@link AsyncResult} handlers)
+ * @author odeda
+ */
 public class Futures {
 
+	/**
+	 * Configurable features for {@link Futures}
+	 * @author odeda
+	 */
 	public static class Features {
+		/**
+		 * When propagating Vert.x async handlers to CompletableFuture, should Futures be able to report the original call trace
+		 * when an exception happens? This causes a slight performance hit as the call site needs to take a stack trace snapshot before
+		 * executing the call. Set the system property <code>io.cloudonix.lib.futures.async_callsite_snapshots</code> to "<code>true</code>" to enable.
+		 */
 		public static final boolean ENABLE_ASYNC_CALLSITE_SNAPSHOTS = Boolean.valueOf(System.getProperty(
 				"io.cloudonix.lib.futures.async_callsite_snapshots", "false"));
 	}
@@ -117,11 +130,67 @@ public class Futures {
 		}
 	}
 
+	/**
+	 * An functional interface to be implemented by functions used with {@link Futures#on(Class, ThrowingFunction)}.
+	 * 
+	 * This is just like {@link Function} exception it does not limit throwing exceptions
+	 * @author odeda
+	 *
+	 * @param <U> function input value type
+	 * @param <V> function output value type
+	 */
 	@FunctionalInterface
 	public interface ThrowingFunction<U,V> {
 		V apply(U value) throws Throwable;
 	}
 
+	/**
+	 * "catch" style syntax for {@link CompletableFuture#exceptionally(Function)} - allows catching specific exceptions with
+	 * simple chainable syntax. Also allows rethrowing or converting exceptions.
+	 * 
+	 * Usage:
+	 * 
+	 * <pre><code>
+	 * CompletableFuture.&lt;String>supplyAsync(() -> ...) // or some other operations
+	 * .exceptionally(Futures.on(SomeExpectedException.class, e -> "The expected exception"))
+	 * .exceptionally(t -> { 
+	 *   // handle other throwables 
+	 * });
+	 * </code></pre>
+	 * 
+	 * Or rethtrow:
+	 *  
+	 * <pre><code>
+	 * CompletableFuture.&lt;String>supplyAsync(() -> ...) // or some other operations
+	 * .exceptionally(Futures.on(SomeExpectedException.class, e -> { throw e; }))
+	 * .exceptionally(t -> { 
+	 *   // handle other throwables 
+	 * });
+	 * </code></pre>
+	 * 
+	 * Or convert to another exception:
+	 *  
+	 * <pre><code>
+	 * CompletableFuture.&lt;String>supplyAsync(() -> ...) // or some other operations
+	 * .exceptionally(Futures.on(SomeExpectedException.class, e -> { throw new OtherException(e); }))
+	 * .exceptionally(t -> { 
+	 *   // handle other throwables 
+	 * });
+	 * </code></pre>
+	 * 
+	 * Please note that any exception thrown will be caught by a downstream <code>exceptionally()</code> handler. A set of 
+	 * <code>exceptionally(Futures.on(...))</code> is not like a set of catches for a single try, but more like a set of nested
+	 * try...catch clauses.
+	 * 
+	 * @param <T> Result type to recover from the exception
+	 * @param <E> Exception type to catch
+	 * @param errType The class of the exception type to catch
+	 * @param fn Handler function that will be called when the CompletableFuture completed exceptionally with a throwable
+	 *   that either matches the specified exception type, or is a {@link RuntimeException} that wraps the specified exception type.
+	 *   The handler function may return a value that matches the result type or throw an exception.
+	 * @return a function that can be supplied to a {@link CompletableFuture#exceptionally(Function)} method and that will
+	 * catch only the specified exception type, rethrowing all other exceptions automatically.
+	 */
 	public static <T, E extends Throwable> Function<Throwable, ? extends T> on(Class<E> errType,
 			ThrowingFunction<E, ? extends T> fn) {
 		return t -> {
@@ -542,7 +611,7 @@ public class Futures {
 	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
 	 * @param <T> type of source values
 	 * @param source list of source values
-	 * @param mapper mapping operation
+	 * @param operation mapping operation
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
 	public static <T> CompletableFuture<Void> consecutively(List<T> source, Function<T, CompletableFuture<Void>> operation) {
@@ -554,7 +623,7 @@ public class Futures {
 	 * or if <code>false</code> is provided as the last argument - after it has rejected
 	 * @param <T> type of source values
 	 * @param source list of source values
-	 * @param mapper mapping operation
+	 * @param operation mapping operation
 	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
@@ -566,7 +635,7 @@ public class Futures {
 	 * Run the promise producing operation for each of the source values, each after the previous operation has completed successfully
 	 * @param <T> type of source values
 	 * @param source stream of source values
-	 * @param mapper mapping operation
+	 * @param operation mapping operation
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
 	public static <T> CompletableFuture<Void> consecutively(Stream<T> source, Function<T, CompletableFuture<Void>> operation) {
@@ -578,7 +647,7 @@ public class Futures {
 	 * or if <code>false</code> is provided as the last argument - after it has rejected
 	 * @param <T> type of source values
 	 * @param source stream of source values
-	 * @param mapper mapping operation
+	 * @param operation mapping operation
 	 * @param stopOnFailure whether to complete all operations even if one or more operations rejected
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
