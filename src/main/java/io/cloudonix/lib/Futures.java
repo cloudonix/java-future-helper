@@ -615,7 +615,7 @@ public class Futures {
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
 	public static <T> CompletableFuture<Void> consecutively(List<T> source, Function<T, CompletableFuture<Void>> operation) {
-		return consecutively(source, operation, true);
+		return consecutively(source.stream(), operation, true);
 	}
 	
 	/**
@@ -628,7 +628,7 @@ public class Futures {
 	 * @return a promise that will resolve if no error has occurred, or reject with the first error if such occurred.
 	 */
 	public static <T> CompletableFuture<Void> consecutively(List<T> source, Function<T, CompletableFuture<Void>> operation, boolean stopOnFailure) {
-		return consecutively(source, operation, stopOnFailure);
+		return consecutively(source.stream(), operation, stopOnFailure);
 	}
 	
 	/**
