@@ -125,6 +125,21 @@ public class Timers {
 		timer.schedule(operation, time);
 		return operation;
 	}
+
+	
+	/**
+	 * Set an operation to happen daily at a certain time
+	 * @param operation the operation to be executed
+	 * @param firstTime the time at which to perform the first execution, in milliseconds.
+	 * 	If null or in the past, the action will be performed immediately.
+	 * @param recurrenceEvery the delay between each execution
+	 */
+	public static Cancellable setPeriodicOperation(Runnable operation, Instant firstTime, Duration recurrenceEvery) {
+		RunnableTask task = new RunnableTask(operation);
+		long start = firstTime == null ? 0 : Math.max(0, firstTime.toEpochMilli() - System.currentTimeMillis());
+		timer.scheduleAtFixedRate(task, start, recurrenceEvery.toMillis());
+		return task;
+	}
 	
 	/**
 	 * Set an operation to happen daily at a certain time
@@ -134,7 +149,7 @@ public class Timers {
 	 */
 	public static Cancellable setPeriodicOperation(Runnable operation, long firstTime, long recurrenceEvery) {
 		RunnableTask task = new RunnableTask(operation);
-		timer.schedule(task, new Date(firstTime), recurrenceEvery);
+		timer.scheduleAtFixedRate(task, Math.max(0,  firstTime - System.currentTimeMillis()), recurrenceEvery);
 		return task;
 	}
 	
