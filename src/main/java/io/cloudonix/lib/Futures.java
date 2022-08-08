@@ -192,7 +192,7 @@ public class Futures {
 	 * @return a function that can be supplied to a {@link CompletableFuture#exceptionally(Function)} method and that will
 	 * catch only the specified exception type, rethrowing all other exceptions automatically.
 	 */
-	public static <T, E extends Throwable> Function<Throwable, ? extends T> on(Class<E> errType,
+	public static <T, E extends Throwable> Function<Throwable, T> on(Class<E> errType,
 			ThrowingFunction<E, ? extends T> fn) {
 		return t -> {
 			Throwable cause = t;
@@ -213,7 +213,7 @@ public class Futures {
 			}
 		};
 	}
-
+	
 	/**
 	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}.
 	 *
@@ -576,6 +576,20 @@ public class Futures {
 		return value -> {
 			Timers.schedule(() -> future.complete(value), delay);
 			return future;
+		};
+	}
+	
+	/**
+	 * Generate a Vert.x Future composition function that delays the return of an arbitrary value
+	 * @param <T> Value type of the promise
+	 * @param delay delay in milliseconds to impart on the value
+	 * @return A function to be used in @{link {@link Future#compose(Function)}
+	 */
+	public static <T> Function<T, Future<T>> delayFuture(long delay) {
+		Promise<T> promise = Promise.promise();
+		return value -> {
+			Timers.schedule(() -> promise.complete(value), delay);
+			return promise.future();
 		};
 	}
 	
