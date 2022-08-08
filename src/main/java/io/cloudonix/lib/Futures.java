@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 /**
  * Set of static function to help work with Java's {@link CompletableFuture} and Vert.x async callbacks (@{link {@link AsyncResult} handlers)
@@ -446,6 +447,31 @@ public class Futures {
 		}
 	}
 
+	/**
+	 * wait for all of the futures to complete and return a list of their results
+	 *
+	 * @param <G> Value type of the stream's promises
+	 * @param futures
+	 *            the stream to execute allOf on
+	 * @return a promise that will complete when all promises in
+	 *         the stream are completed and contains a list of their results. The list will contain null
+	 *         as the result of any promise that rejected;
+	 */
+	public static <G> Future<List<G>> resolveAllFutures(Stream<Future<G>> futures) {
+		ConcurrentSkipListMap<Integer, Holder<G>> out = new ConcurrentSkipListMap<>();
+		AtomicInteger i = new AtomicInteger(0), done = new AtomicInteger(0);
+		Promise<List<G>> res = Promise.promise();
+		futures.sequential().forEach(f -> {
+			int index = i.getAndIncrement();
+			f.onComplete(result -> {
+				out.put(index, new Holder<>(result.succeeded() ? result.result() : null));
+				if (done.incrementAndGet() >= i.get())
+					res.complete(out.values().stream().map(h -> h.value).collect(Collectors.toList()));
+			});
+		});
+		return res.future();
+	}
+	
 	/**
 	 * wait for all of the futures to complete and return a list of their results
 	 *
