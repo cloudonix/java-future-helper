@@ -716,4 +716,61 @@ public class Futures {
 			return null;
 		};
 	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)) for Vert.x
+	 * {@link Future} that when both input futures resolve, calls the bi-mapper with both results to create a
+	 * {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the first failure will be propagated to the returned future.
+	 * If the mapper throws an exception, that exception will be used to reject the returned future.
+	 * @param <T> Resolution type of the first promise
+	 * @param <U> Resolution type of the second promise
+	 * @param <G> Resolution type of the mapper's resulting promise
+	 * @param a first promise to combine
+	 * @param b second promise to combine
+	 * @param mapper mapper used to combine the result
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <T,U,G> Future<G> combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> mapper) {
+		class CombinedTuple {
+			public CombinedTuple(BiFunction<T, U, Future<G>> mapper) {
+				output = mapInput.future().compose(v -> mapper.apply(firstRes, secondRes));
+			}
+			volatile T firstRes;
+			volatile boolean wasFirstRes = false;
+			volatile U secondRes;
+			volatile boolean wasSecondRes = false;
+			Promise<Void> mapInput = Promise.promise();
+			Future<G> output;
+			private boolean handledError(AsyncResult<?> res) {
+				if (res.succeeded())
+					return false;
+				mapInput.tryFail(res.cause());
+				return true;
+			}
+			public void handleFirst(AsyncResult<T> res) {
+				if (handledError(res)) return;
+				firstRes = res.result();
+				wasFirstRes = true;
+				sendResult();
+			}
+			public void handleSecond(AsyncResult<U> res) {
+				if (handledError(res)) return;
+				secondRes = res.result();
+				wasSecondRes = true;
+				sendResult();
+			}
+			private synchronized void sendResult() {
+				if (!wasFirstRes || !wasSecondRes)
+					return;
+				mapInput.complete();
+			}
+		};
+		CombinedTuple results = new CombinedTuple(mapper);
+		a.onComplete(results::handleFirst);
+		b.onComplete(results::handleSecond);
+		return results.output;
+	}
 }
