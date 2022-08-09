@@ -446,15 +446,27 @@ public class Futures {
 			value = val;
 		}
 	}
+	
+	/**
+	 * Wait for all of the promises to complete and return a list of their results.
+	 * @param <G> Value type of the promises result
+	 * @param futures the list of promises to resolve
+	 * @return a promise that will resolve when all promises in
+	 *         the stream are resolved or rejected and contains a list of their results. The list will contain null
+	 *         as the result of any promise that rejected;
+	 */
+	@SafeVarargs
+	public static <G> Future<List<G>> resolveAllFutures(Future<G>... futures) {
+		return resolveAllFutures(Stream.of(futures));
+	}
 
 	/**
-	 * wait for all of the futures to complete and return a list of their results
+	 * Wait for all of the promises to complete and return a list of their results.
 	 *
-	 * @param <G> Value type of the stream's promises
-	 * @param futures
-	 *            the stream to execute allOf on
-	 * @return a promise that will complete when all promises in
-	 *         the stream are completed and contains a list of their results. The list will contain null
+	 * @param <G> Value type of the promises result
+	 * @param futures the list of promises to resolve
+	 * @return a promise that will resolve when all promises in
+	 *         the stream are resolved or rejected and contains a list of their results. The list will contain null
 	 *         as the result of any promise that rejected;
 	 */
 	public static <G> Future<List<G>> resolveAllFutures(Stream<Future<G>> futures) {
