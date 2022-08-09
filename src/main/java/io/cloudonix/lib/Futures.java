@@ -744,7 +744,7 @@ public class Futures {
 	}
 	
 	/**
-	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)) for Vert.x
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction))} for Vert.x
 	 * {@link Future} that when both input futures resolve, calls the bi-mapper with both results to create a
 	 * {@link Future} that will be used to complete the returned Future.
 	 * 
