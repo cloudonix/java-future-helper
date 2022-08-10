@@ -578,6 +578,18 @@ public class Futures {
 	}
 
 	/**
+	 * Create a stream collector to help resolve a stream of promises for values to a stream of values.
+	 * Beware: this API does not leave a lot of room for handling errors gracefully. If any of the promises in the input
+	 * stream fail, it would cause the resulting stream to throw a {@link CompletionException} somewhere through the processing
+	 * of the resulting stream - the exact timing is hard to predict due to how streams operate.
+	 * @param <G> The type of futures resolved by this stream
+	 * @return a collector that collects a stream of futures to a stream of values
+	 */
+	public static <G> Collector<Future<G>, Collection<?>, Stream<G>> resolvingVertxCollectorToStream() {
+		return new VertxStreamFutureResolver<>();
+	}
+
+	/**
 	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
 	 * @param <T> Value type of the promise
 	 * @param delay delay in milliseconds to impart on the value
