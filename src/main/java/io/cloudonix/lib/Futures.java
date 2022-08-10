@@ -744,11 +744,11 @@ public class Futures {
 	}
 	
 	/**
-	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)) for Vert.x
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction))} for Vert.x
 	 * {@link Future} that when both input futures resolve, calls the bi-mapper with both results to create a
 	 * {@link Future} that will be used to complete the returned Future.
 	 * 
-	 * If either input promises rejects with a failure, the first failure will be propagated to the returned future.
+	 * If either input promises rejects with a failure, the first failure will be used to reject the returned future.
 	 * If the mapper throws an exception, that exception will be used to reject the returned future.
 	 * @param <T> Resolution type of the first promise
 	 * @param <U> Resolution type of the second promise
@@ -798,5 +798,32 @@ public class Futures {
 		a.onComplete(results::handleFirst);
 		b.onComplete(results::handleSecond);
 		return results.output;
+	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#applyToEither(CompletionStage, Function))} for Vert.x
+	 * {@link Future} that when either input futures resolve, calls the mapper with the first result to resolve to create a
+	 * {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If both input promises rejects with a failure, the first failure will be used to reject the returned future.
+	 * If the mapper throws an exception, that exception will be used to reject the returned future.
+	 * @param <T> Resolution type of the promises
+	 * @param <G> Resolution type of the mapper's resulting promise
+	 * @param a first promise to resolve
+	 * @param b second promise to resolve
+	 * @param mapper mapper used to combine the result
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if
+	 *   errors occur.
+	 */
+	public static <T,G> Future<G> either(Future<T> a, Future<T> b, Function<T,Future<G>> mapper) {
+		Promise<T> result = Promise.promise();
+		AtomicReference<Throwable> firstError = new AtomicReference<>(null);
+		Handler<Throwable> failureHandler = t -> {
+			if (!firstError.compareAndSet(null, t)) // if we failed to update the error ref, it means we are the second one
+				result.tryFail(firstError.get());
+		};
+		a.onSuccess(result::tryComplete).onFailure(failureHandler);
+		b.onSuccess(result::tryComplete).onFailure(failureHandler);
+		return result.future().compose(mapper);
 	}
 }
