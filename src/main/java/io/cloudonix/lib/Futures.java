@@ -612,18 +612,6 @@ public class Futures {
 	}
 
 	/**
-	 * Create a stream collector to help resolve a stream of promises for values to a stream of values.
-	 * Beware: this API does not leave a lot of room for handling errors gracefully. If any of the promises in the input
-	 * stream fail, it would cause the resulting stream to throw a {@link CompletionException} somewhere through the processing
-	 * of the resulting stream - the exact timing is hard to predict due to how streams operate.
-	 * @param <G> The type of futures resolved by this stream
-	 * @return a collector that collects a stream of futures to a stream of values
-	 */
-	public static <G> Collector<Future<G>, Collection<?>, Stream<G>> resolvingVertxCollectorToStream() {
-		return new VertxStreamFutureResolver<>();
-	}
-
-	/**
 	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
 	 * @param <T> Value type of the promise
 	 * @param delay delay in milliseconds to impart on the value
@@ -789,87 +777,4 @@ public class Futures {
 		};
 	}
 	
-	/**
-	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for Vert.x
-	 * {@link Future} that when both input futures resolve, calls the bi-mapper with both results to create a
-	 * {@link Future} that will be used to complete the returned Future.
-	 * 
-	 * If either input promises rejects with a failure, the first failure will be used to reject the returned future.
-	 * If the mapper throws an exception, that exception will be used to reject the returned future.
-	 * @param <T> Resolution type of the first promise
-	 * @param <U> Resolution type of the second promise
-	 * @param <G> Resolution type of the mapper's resulting promise
-	 * @param a first promise to combine
-	 * @param b second promise to combine
-	 * @param mapper mapper used to combine the result
-	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
-	 *   error occured.
-	 */
-	public static <T,U,G> Future<G> combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> mapper) {
-		class CombinedTuple {
-			public CombinedTuple(BiFunction<T, U, Future<G>> mapper) {
-				output = mapInput.future().compose(v -> mapper.apply(firstRes, secondRes));
-			}
-			volatile T firstRes;
-			volatile boolean wasFirstRes = false;
-			volatile U secondRes;
-			volatile boolean wasSecondRes = false;
-			Promise<Void> mapInput = Promise.promise();
-			Future<G> output;
-			private boolean handledError(AsyncResult<?> res) {
-				if (res.succeeded())
-					return false;
-				mapInput.tryFail(res.cause());
-				return true;
-			}
-			public void handleFirst(AsyncResult<T> res) {
-				if (handledError(res)) return;
-				firstRes = res.result();
-				wasFirstRes = true;
-				sendResult();
-			}
-			public void handleSecond(AsyncResult<U> res) {
-				if (handledError(res)) return;
-				secondRes = res.result();
-				wasSecondRes = true;
-				sendResult();
-			}
-			private synchronized void sendResult() {
-				if (!wasFirstRes || !wasSecondRes)
-					return;
-				mapInput.complete();
-			}
-		};
-		CombinedTuple results = new CombinedTuple(mapper);
-		a.onComplete(results::handleFirst);
-		b.onComplete(results::handleSecond);
-		return results.output;
-	}
-	
-	/**
-	 * An analogous implementation to {@link CompletableFuture#applyToEither(CompletionStage, Function)} for Vert.x
-	 * {@link Future} that when either input futures resolve, calls the mapper with the first result to resolve to create a
-	 * {@link Future} that will be used to complete the returned Future.
-	 * 
-	 * If both input promises rejects with a failure, the first failure will be used to reject the returned future.
-	 * If the mapper throws an exception, that exception will be used to reject the returned future.
-	 * @param <T> Resolution type of the promises
-	 * @param <G> Resolution type of the mapper's resulting promise
-	 * @param a first promise to resolve
-	 * @param b second promise to resolve
-	 * @param mapper mapper used to combine the result
-	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if
-	 *   errors occur.
-	 */
-	public static <T,G> Future<G> either(Future<T> a, Future<T> b, Function<T,Future<G>> mapper) {
-		Promise<T> result = Promise.promise();
-		AtomicReference<Throwable> firstError = new AtomicReference<>(null);
-		Handler<Throwable> failureHandler = t -> {
-			if (!firstError.compareAndSet(null, t)) // if we failed to update the error ref, it means we are the second one
-				result.tryFail(firstError.get());
-		};
-		a.onSuccess(result::tryComplete).onFailure(failureHandler);
-		b.onSuccess(result::tryComplete).onFailure(failureHandler);
-		return result.future().compose(mapper);
-	}
 }

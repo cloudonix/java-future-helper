@@ -1,6 +1,14 @@
 # FutureHelper
 
-FutureHelper is a utility library that contains useful methods that handle Java 8's `CompletableFuture` and to integrate them with Vert.x `AsyncResult` type handlers and Java 8's streams. An additional facility of FutureHelper is a simplified timer setup and invocation using Java 8's `Timer` class.
+FutureHelper is a utility library that with a collection of static library methods to help with asynchronous programming using the Java language Promise API (`CompletableFuture`/`CompletionStage`) and Vert.x asynchronous programming APIs.
+
+Facilities include:
+
+* Bridging between Java 8's `CompletableFuture` and Vert.x `AsyncResult` type handlers.
+* Missing workflows for Java 8's `CompletableFuture` .
+* Missing workflows for Vert.x 4 `Promise`.
+* Helpers to manage promises (both Java and Vert.x) in Java 8's streams.
+* Simplified timer setup and invocation using Java 8's `Timer` class.
 
 ## Installation
 
@@ -21,7 +29,7 @@ Then add the dependency with the version you want to use:
 	<dependency>
 	    <groupId>com.github.cloudonix</groupId>
 	    <artifactId>java-future-helper</artifactId>
-	    <version>2.0.0</version>
+	    <version>3.0.6</version>
 	</dependency>
 ```
 
@@ -29,7 +37,7 @@ Then add the dependency with the version you want to use:
 
 ## `CompletableFuture` helper class - `Futures`
 
-All of the methods are static methods in the class named `Futures`. 
+All of the methods are static methods in the class named `Futures`.  *[Note: the information in this section may be out of date. Consult the Javadoc for the full details]*
 
 ### Synchronous completion helpers
 
@@ -202,6 +210,30 @@ Future<Void> vertxFuture = fs
 
 completableFutureAPI.readDataBuffer().handle(Futures.forward(vertxFuture::handle));
 ```
+
+## Vert.x `Promise` helper class - `Promises`
+
+The `Promises` method library is currently a playground for implementing workflows around Vert.x `Promise` / `Future` APIs. It currently includes at least the following:
+
+### Promise Collection helpers
+
+#### `Promises.resolveAll(Future<T>... futures)`
+
+#### `Promises.resolveAll(List<Future<T>> futures)`
+
+#### `Promises.resolveAll(Stream<Future<T>> futures)`
+
+#### `Promises.resolvingCollector()`
+
+The above methods consume an array/list/stream of promises and resolve all of them to a single promise that will resolve to a list of results. The basic premise is that on success you'd get a list (in order) of all the resolutions of all the promises provided as input, while on any failure, the resulting promise will reject with the first failure.
+
+#### `Promises.combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> m)`
+
+The `combine` method is a helper to implement the Java 8 `CompletableFuture.thenCombine()` workflow where two promises - of likely different types - are resolved and fed into a mapper that can process the two different values and return a third. Unlike the the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception.
+
+#### `Promises.either(Future<T> a, Future<T> b, Function<T,Future<G> m)`
+
+The `either` method is a helper to implement the Java 8 `CompletableFuture.thanEither()` workflow where two promises - of the same type - are being resolved and the first that succeeds is fed into a mapper to process it. Unlike the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception. Another improvement over the Java 8 API is that this method is idempotent to whether either of the provided promises reject - if any one rejects, regardless of which, the one value that is resolved is provided to the mapper, while if both reject - the mapper will not be called and the returned promise will reject with the error of the first promise that rejected.
 
 ## `Timer` helper class - `Timers`
 
