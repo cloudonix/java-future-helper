@@ -180,13 +180,15 @@ public class Promises {
 	 * Create a {@link Future} that will resolve when all the provided promises resolve.
 	 * This method is similar to the {@link #resolveAll(Future...)} and similar methods, but doesn't return the results
 	 * and therefore doesn't care about the input types and the developer can mix promises with different resolution types.
-	 * @param <T> Value type of the promises result
 	 * @param futures the list of promises to resolve
 	 * @return a promise that when all promises provided as input resolve correctly, it will resolve.
 	 *         If any promise rejected, the returned promise will reject with the error from the first such rejection.
 	 */
+	@SafeVarargs
 	public static Future<Void> waitForAll(Future<?>...futures) {
-		return resolveAll(futures).mapEmpty();
+		@SuppressWarnings("unchecked")
+		Future<Object> fs[] = (Future[])futures;
+		return Promises.resolveAll(fs).mapEmpty();
 	}
 
 	/**
