@@ -185,8 +185,10 @@ public class Promises {
 	 *         If any promise rejected, the returned promise will reject with the error from the first such rejection.
 	 */
 	@SafeVarargs
-	public static Future<Void> waitForAll(Future<? extends Object>...futures) {
-		return Promises.resolveAll(futures).mapEmpty();
+	public static Future<Void> waitForAll(Future<?>...futures) {
+		@SuppressWarnings("unchecked")
+		Future<Object> fs[] = (Future[])futures;
+		return Promises.resolveAll(fs).mapEmpty();
 	}
 
 	/**
