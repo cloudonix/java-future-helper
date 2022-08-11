@@ -274,4 +274,19 @@ public class Promises {
 		b.onSuccess(result::tryComplete).onFailure(failureHandler);
 		return result.future().compose(mapper);
 	}
+	
+	/**
+	 * Generate a Vert.x Future composition function that delays the return of an arbitrary value
+	 * @param <T> Value type of the promise
+	 * @param delay delay in milliseconds to impart on the value
+	 * @return A function to be used in @{link {@link Future#compose(Function)}
+	 */
+	public static <T> Function<T, Future<T>> delay(long delay) {
+		Promise<T> promise = Promise.promise();
+		return value -> {
+			Timers.schedule(() -> promise.complete(value), delay);
+			return promise.future();
+		};
+	}
+
 }
