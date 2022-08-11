@@ -266,7 +266,20 @@ possiblyFailingOp()
     .onSuccess(...).onFailure(...);
 ```
 
+#### `Promises.delay(long delay)`
 
+Allows to add a delay in the middle of an asynchronous chain of promises. This method generates a function that can be used in `Future.compose()` to forward a value from one completion to another, inducing a specified delay (in milliseconds).
+
+Example usage:
+
+```java
+api.createSomeResource()
+    // give the resource some time to complete initialization
+    .compose(Futures.delay(500))
+    .compose(resource -> api.useResource(resource));
+```
+
+### 
 
 ## `Timer` helper class - `Timers`
 
