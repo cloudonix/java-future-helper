@@ -227,6 +227,10 @@ The `Promises` method library is currently a playground for implementing workflo
 
 The above methods consume an array/list/stream of promises and resolve all of them to a single promise that will resolve to a list of results. The basic premise is that on success you'd get a list (in order) of all the resolutions of all the promises provided as input, while on any failure, the resulting promise will reject with the first failure.
 
+#### `Promise.waitForAll(Future<?>...futures)`
+
+Similar to the `resolveAll()` methods, the `waitForAll()` method produces a promise that will resolve - to `null` - when all the input promises resolve, and will reject if any of the input promises reject - but it always resolves to a `Void null` and therefore doesn't care about the input types - so the developer can mix inputs with different types and just wait for all of them to finish.
+
 #### `Promises.combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> m)`
 
 The `combine()` method is a helper to implement the Java 8 `CompletableFuture.thenCombine()` workflow where two promises - of likely different types - are resolved and fed into a mapper that can process the two different values and return a third. Unlike the the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception.
