@@ -210,7 +210,12 @@ public class Promises {
 	public static <T,U,G> Future<G> combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> mapper) {
 		class CombinedTuple {
 			public CombinedTuple(BiFunction<T, U, Future<G>> mapper) {
-				output = mapInput.future().compose(v -> mapper.apply(firstRes, secondRes));
+				output = mapInput.future().compose(v -> { 
+					Future<G> res = mapper.apply(firstRes, secondRes);
+					if (res == null)
+						res = Future.succeededFuture();
+					return res;
+				});
 			}
 			volatile T firstRes;
 			volatile boolean wasFirstRes = false;
@@ -272,7 +277,12 @@ public class Promises {
 		};
 		a.onSuccess(result::tryComplete).onFailure(failureHandler);
 		b.onSuccess(result::tryComplete).onFailure(failureHandler);
-		return result.future().compose(mapper);
+		return result.future().compose(v -> {
+			Future<G> res = mapper.apply(v);
+			if (res == null)
+				res = Future.succeededFuture();
+			return res;
+		});
 	}
 	
 	/**
