@@ -34,6 +34,44 @@ import io.vertx.core.Promise;
 public class Promises {
 	
 	/**
+	 * A helper to handle specific errors using {@link Future#otherwise(Function)}, in a style idiomatic with Java's
+	 * {@code try...catch(E1)...catch(E2)} syntax.
+	 * 
+	 * Example usage:
+	 * 
+	 * <pre><code>
+	 * createSomePromiseThatCanReject()
+	 * .otherwise(Promises.recover(DataAccessException.class, dae -> { return valueInCaseOfDataError; }))
+	 * .otherwise(Promises.recover(IOException.class, ioe -> { return valueInCaseOfIOError; }))
+	 * .onSuccess(value -> {
+	 *   // successfully recovered from DataAccessException or IOException with different recoveries
+	 * })
+	 * </code></pre>
+	 * 
+	 * Because the mapper is not actually a {@code java.util.function.Function}, it can also throw checked exceptions:
+	 * 
+	 * <pre><code>
+	 * createSomePromiseThatCanReject()
+	 * .otherwise(Promises.recover(DataAccessException.class, dae -> { throw new IOException(dae) }))
+	 * </code></pre>
+	 * 
+	 * when the mapper throws, the {@link Future} returned from the {@code otherwise()} call will reject(fail) with the
+	 * new thrown exception;
+	 * 
+	 * <strong>Note:</strong> this method is an alias to {@link Futures#on(Class, io.cloudonix.lib.Futures.ThrowingFunction)}
+	 * and suffers from all of its deficiencies
+	 * 
+	 * @param <T> type of value that we will try to recover to from the error
+	 * @param <E> type of exception that we will try to handle
+	 * @param errType The class of the exception that we will try to recover from (its nice to explicitly declare the error while the value is implicit)
+	 * @param mapper a recovery mapper that takes the exception and either returns a value or throws another exception (rethrowing is also OK)
+	 * @return a {@link Function} that can be used as the handler for {@link Future#otherwise(Function)}
+	 */
+	public static <T,E extends Throwable> Function<Throwable,T> recover(Class<E> errType, Futures.ThrowingFunction<E,? extends T> mapper) {
+		return Futures.on(errType, mapper);
+	}
+	
+	/**
 	 * Wait for all of the promises to complete and return a list of their results.
 	 * @param <T> Value type of the promises result
 	 * @param futures the list of promises to resolve

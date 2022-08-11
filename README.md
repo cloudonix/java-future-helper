@@ -229,11 +229,40 @@ The above methods consume an array/list/stream of promises and resolve all of th
 
 #### `Promises.combine(Future<T> a, Future<U> b, BiFunction<T,U,Future<G>> m)`
 
-The `combine` method is a helper to implement the Java 8 `CompletableFuture.thenCombine()` workflow where two promises - of likely different types - are resolved and fed into a mapper that can process the two different values and return a third. Unlike the the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception.
+The `combine()` method is a helper to implement the Java 8 `CompletableFuture.thenCombine()` workflow where two promises - of likely different types - are resolved and fed into a mapper that can process the two different values and return a third. Unlike the the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception.
 
 #### `Promises.either(Future<T> a, Future<T> b, Function<T,Future<G> m)`
 
-The `either` method is a helper to implement the Java 8 `CompletableFuture.thanEither()` workflow where two promises - of the same type - are being resolved and the first that succeeds is fed into a mapper to process it. Unlike the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception. Another improvement over the Java 8 API is that this method is idempotent to whether either of the provided promises reject - if any one rejects, regardless of which, the one value that is resolved is provided to the mapper, while if both reject - the mapper will not be called and the returned promise will reject with the error of the first promise that rejected.
+The `either()` method is a helper to implement the Java 8 `CompletableFuture.thanEither()` workflow where two promises - of the same type - are being resolved and the first that succeeds is fed into a mapper to process it. Unlike the Java 8 API, here the mapper is expected to be asynchronous and return a `Future` - both because we expect this to be more useful and it is also more idiomatic to handle errors (by returning a `failedFuture()`) rather than throwing an unchecked exception. Another improvement over the Java 8 API is that this method is idempotent to whether either of the provided promises reject - if any one rejects, regardless of which, the one value that is resolved is provided to the mapper, while if both reject - the mapper will not be called and the returned promise will reject with the error of the first promise that rejected.
+
+#### `Promises.receover(Class<E> errType, Function<E,T> mapper)`
+
+The `recover()` method helps write more idiomatic code when using `Future.otherwise()` to recover a `Future` that can fail with multiple exception types. The result from using this method should look relatively more readable to developer familiar with the Java syntax `try { ... } catch (AException a) { ... } catch (BException b) { ... }`, than recovery code that uses `instanceof` to test for exception types.
+
+E.g. instead of writing this:
+
+```java
+possiblyFailingOp().otherwise(t -> {
+    if (t instanceof DataAccessException)
+        return valueIncaseOfDataError;
+    if (t instanceof IOException)
+        return valueIncaseOfIOError;
+    throw new RuntimeException(t); // rethrow unexpected error to be handled by onFailure handlers
+})
+    .onSuccess(...).onFailure(...);
+```
+
+You should write:
+
+```java
+possiblyFailingOp()
+    .otherwise(Promises.receover(DataAccessException.class, dae -> valueIncaseOfDataError))
+    .otherwise(Promises.receover(IOException.class, ioe -> valueIncaseOfIOError))
+    // no need to explicitly rethrow unhandled exceptions
+    .onSuccess(...).onFailure(...);
+```
+
+
 
 ## `Timer` helper class - `Timers`
 
@@ -295,14 +324,4 @@ class MyClass(){
 
 The following behavior configuration options are available by setting the specific Java system properties:
 
-- `io.cloudonix.lib.futures.async_callsite_snapshots` - when using `fromAsync()` to convert Vert.x
-async callbacks to `CompletableFuture`, in case of a failure the Java 8 runtime encodes its internal exception
-encoding mechanism's stack trace into the generated `CompletionException` class. By setting this property to
-`true`, the library will capture the `fromAsync()` call site and in case of a failure, will encode the original
-call site stack trace into Java's `CompletionException` class. This should allow easier debugging of failed async
-operations. This adds a non-trivial computational cost to every call to `fromAsync()` (even those that will not fail)
-which may be considered expensive depending on your specific scenario.
-
-```
-
-```
+- `io.cloudonix.lib.futures.async_callsite_snapshots` - when using `fromAsync()` to convert Vert.x async callbacks to `CompletableFuture`, in case of a failure the Java 8 runtime encodes its internal exception encoding mechanism's stack trace into the generated `CompletionException` class. By setting this property to `true`, the library will capture the `fromAsync()` call site and in case of a failure, will encode the original call site stack trace into Java's `CompletionException` class. This should allow easier debugging of failed async operations. This adds a non-trivial computational cost to every call to `fromAsync()` (even those that will not fail) which may be considered expensive depending on your specific scenario.
