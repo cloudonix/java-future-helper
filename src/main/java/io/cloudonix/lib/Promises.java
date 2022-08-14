@@ -2,11 +2,13 @@ package io.cloudonix.lib;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -189,6 +191,41 @@ public class Promises {
 		@SuppressWarnings("unchecked")
 		Future<Object> fs[] = (Future[])futures;
 		return Promises.resolveAll(fs).mapEmpty();
+	}
+
+	/**
+	 * Returns a new {@link Future} that is completed when any promise in the stream
+	 * resolves, with that first such resolved value. If all of the promises in the stream rejected,
+	 * then the returned Future is failed with the exception with which the last promise rejected (chronologically, not in order).
+	 *
+	 * If no futures where provided in the stream (hence no future rejected or resolved)
+	 * the returned Future is rejected with the {@link NoSuchElementException} exception.
+	 *
+	 * @param <G> Value type of the stream's promises
+	 * @param futures {@link Stream} of futures to consider
+	 * @return A {@link Future} that completes when the first future from the stream completes successfully
+	 */
+	public static <G> Future<G> resolveAny(Stream<Future<G>> futures) {
+		AtomicReference<Throwable> lastFailure = new AtomicReference<>();
+		AtomicBoolean wasCompleted = new AtomicBoolean();
+		Promise<G> res = Promise.promise();
+		Function<Future<G>,Future<Void>> mapper = f -> f.<Void>map(v -> {
+			if (wasCompleted.compareAndSet(false, true))
+				res.complete(v);
+			return null;
+		}).otherwise(t -> {
+			lastFailure.set(t);
+			return null;
+		});
+		resolveAll(futures.map(mapper)).onSuccess(v -> {
+			if (wasCompleted.get())
+				return;
+			if (lastFailure.get() != null)
+				res.tryFail(lastFailure.get());
+			else
+				res.tryFail(new NoSuchElementException());
+		});
+		return res.future();
 	}
 
 	/**
