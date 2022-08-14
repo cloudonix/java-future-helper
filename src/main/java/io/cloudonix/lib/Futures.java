@@ -424,40 +424,6 @@ public class Futures {
 	}
 
 	/**
-	 * Returns a new {@link Future} that is completed when any promise in the stream
-	 * resolves, with that first such resolved value. If all of the promises in the stream rejected,
-	 * then the returned Future is failed with the exception with which the last promise rejected (chronologically, not in order).
-	 *
-	 * If no futures where provided in the stream (hence no future rejected or resolved)
-	 * the returned Future is rejected with the {@link NoSuchElementException} exception.
-	 *
-	 * @param <G> Value type of the stream's promises
-	 * @param futures {@link Stream} of futures to consider
-	 * @return A {@link Future} that completes when the first future from the stream completes successfully
-	 */
-	public static <G> Future<G> resolveAnyFutures(Stream<Future<G>> futures) {
-		AtomicReference<Throwable> lastFailure = new AtomicReference<>();
-		AtomicBoolean wasCompleted = new AtomicBoolean();
-		Promise<G> res = Promise.promise();
-		Function<Future<G>,Future<Void>> mapper = f -> f.<Void>map(v -> {
-			if (wasCompleted.compareAndSet(false, true))
-				res.complete(v);
-			return null;
-		}).otherwise(t -> {
-			lastFailure.set(t);
-			return null;
-		});
-		Futures.<Void>resolveAllFutures(futures.map(mapper)).onSuccess(v -> {
-			if (wasCompleted.get())
-				return;
-			if (lastFailure.get() != null)
-				res.tryFail(lastFailure.get());
-			else
-				res.tryFail(new NoSuchElementException());
-		});
-		return res.future();
-	}
-	/**
 	 * Returns a new CompletableFuture that is completed when the first future in the list
 	 * completes, with that future's completion value. If all of the futures in the list completed
 	 * exceptionally, then returned CompletableFuture is completed exceptionally with the exception
@@ -479,43 +445,6 @@ public class Futures {
 		public Holder(T val) {
 			value = val;
 		}
-	}
-	
-	/**
-	 * Wait for all of the promises to complete and return a list of their results.
-	 * @param <G> Value type of the promises result
-	 * @param futures the list of promises to resolve
-	 * @return a promise that will resolve when all promises in
-	 *         the stream are resolved or rejected and contains a list of their results. The list will contain null
-	 *         as the result of any promise that rejected;
-	 */
-	@SafeVarargs
-	public static <G> Future<List<G>> resolveAllFutures(Future<G>... futures) {
-		return resolveAllFutures(Stream.of(futures));
-	}
-
-	/**
-	 * Wait for all of the promises to complete and return a list of their results.
-	 *
-	 * @param <G> Value type of the promises result
-	 * @param futures the list of promises to resolve
-	 * @return a promise that will resolve when all promises in
-	 *         the stream are resolved or rejected and contains a list of their results. The list will contain null
-	 *         as the result of any promise that rejected;
-	 */
-	public static <G> Future<List<G>> resolveAllFutures(Stream<Future<G>> futures) {
-		ConcurrentSkipListMap<Integer, Holder<G>> out = new ConcurrentSkipListMap<>();
-		AtomicInteger i = new AtomicInteger(0), done = new AtomicInteger(0);
-		Promise<List<G>> res = Promise.promise();
-		futures.sequential().forEach(f -> {
-			int index = i.getAndIncrement();
-			f.onComplete(result -> {
-				out.put(index, new Holder<>(result.succeeded() ? result.result() : null));
-				if (done.incrementAndGet() >= i.get())
-					res.complete(out.values().stream().map(h -> h.value).collect(Collectors.toList()));
-			});
-		});
-		return res.future();
 	}
 	
 	/**
