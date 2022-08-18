@@ -336,4 +336,53 @@ public class Promises {
 		};
 	}
 
+	/**
+	 * Reimplementation of Vert.x {@link Future#onSuccess(Handler)} in a way that is safe in the face of errors.
+	 * When the handler throws an exception, the built-in onSuccess will cause that exception to thrown into the context,
+	 * which you often don't control. This implementation is based on {@link Future#andThen(Handler)} (from Vert.x 4.3.3)
+	 * and will propagate errors as failures down the Future chain, as expected.
+	 * 
+	 * Example usage:
+	 * <pre><code>
+	 * import static io.cloudonix.lib.Promises.*;
+	 * ...
+	 * getSomePromise().andThen(onSuccess(val -> handleValAndMaybeThrow(val))).andThen(onFailure(t -> reportFailure(t)));
+	 * </code></pre>
+	 * 
+	 * See Vert.x issue report https://github.com/eclipse-vertx/vert.x/issues/4455 for more details 
+	 * @param <T> Type of value carried by the promise
+	 * @param handler A handler to receive the value in case of success
+	 * @return a handler to be fed into {@link Future#andThen(Handler)}
+	 */
+	public static <T> Handler<AsyncResult<T>> onSuccess(Handler<T> handler) {
+		return ar -> {
+			if (ar.succeeded())
+				handler.handle(ar.result());
+		};
+	}
+
+	/**
+	 * Reimplementation of Vert.x {@link Future#onFailure(Handler)} in a way that is safe in the face of errors.
+	 * When the handler throws an exception, the built-in onFailure will cause that exception to thrown into the context,
+	 * which you often don't control. This implementation is based on {@link Future#andThen(Handler)} (from Vert.x 4.3.3)
+	 * and will propagate errors as failures down the Future chain, as expected.
+	 * 
+	 * Example usage:
+	 * <pre><code>
+	 * import static io.cloudonix.lib.Promises.*;
+	 * ...
+	 * getSomePromise().andThen(onSuccess(val -> handleValAndMaybeThrow(val))).andThen(onFailure(t -> reportFailure(t)));
+	 * </code></pre>
+	 * 
+	 * See Vert.x issue report https://github.com/eclipse-vertx/vert.x/issues/4455 for more details 
+	 * @param <T> Type of value carried by the promise
+	 * @param handler A handler to receive the cause of the failure, in case of failure
+	 * @return a handler to be fed into {@link Future#andThen(Handler)}
+	 */
+	public static <T> Handler<AsyncResult<T>> onFailure(Handler<Throwable> handler) {
+		return ar -> {
+			if (ar.failed())
+				handler.handle(ar.cause());
+		};
+	}
 }
