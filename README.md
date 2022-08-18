@@ -279,7 +279,21 @@ api.createSomeResource()
     .compose(resource -> api.useResource(resource));
 ```
 
-### 
+#### `Promises.onSuccess(Handler<T> handler)`
+#### `Promises.onFailure(Handler<Throwable> handler)`
+
+The `onSuccess()` and `onFailure()` methods are a reimplementation of Vert.x `Future.onSuccess()` and `Future.onFailure()` in a way that is safe in the face of exceptions thrown from the handler - when the handler throws an exception, the `Future` internal methods will cause that exception to thrown into the context that executes the handler instead of propagated down the handler chain. These implementations are based on the newer `Future.andThen(Handler)` method (from Vert.x 4.3.3), which propagates handler failures to the returned `Future` instance.
+
+Example usage:
+
+```java
+import static io.cloudonix.lib.Promises.*;
+// ...
+getSomePromise()
+    .andThen(onSuccess(val -> handleValAndMaybeThrow(val)))
+    .andThen(onFailure(t -> reportFailure(t)));
+```
+See [Vert.x issue 4455](https://github.com/eclipse-vertx/vert.x/issues/4455) for more details.
 
 ## `Timer` helper class - `Timers`
 
