@@ -281,7 +281,7 @@ public class Promises {
 			private synchronized void sendResult() {
 				if (!wasFirstRes || !wasSecondRes)
 					return;
-				mapInput.complete();
+				mapInput.tryComplete(); // this can fail if we already failed trying to get the previous result
 			}
 		};
 		CombinedTuple results = new CombinedTuple(mapper);
