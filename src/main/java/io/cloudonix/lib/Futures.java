@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 
 /**
  * Set of static function to help work with Java's {@link CompletableFuture} and Vert.x async callbacks (@{link {@link AsyncResult} handlers)

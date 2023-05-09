@@ -4,6 +4,7 @@ current-version:
 start-release:
 	rel=$(shell $(MAKE) current-version); git flow release start $$rel
 	perl -pi -e 's/-SNAPSHOT//' pom.xml
+	git commit pom.xml -m 'set release version'
 
 finish-release:
 	rel=$(shell git branch --show-current | cut -d/ -f2); git flow release finish $$rel  -m "Release $$rel" </dev/null
