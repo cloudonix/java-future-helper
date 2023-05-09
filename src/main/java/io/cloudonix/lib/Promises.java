@@ -20,6 +20,7 @@ import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import io.vertx.core.AsyncResult;
+import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -384,5 +385,24 @@ public class Promises {
 			if (ar.failed())
 				handler.handle(ar.cause());
 		};
+	}
+	
+	/**
+	 * Import the result of a completion stage into the Vert.x context and return a future that will
+	 * complete, in the context specified, with the result (or failure) of the specified completion stage.
+	 * The completion stage is expected to be abandoned after being imported, but this method does not
+	 * enforce that, and additional handlers may be assigned to that completion stage and they will take
+	 * effect as expected. 
+	 * @param <T> Type of value to expect from the completion stage
+	 * @param stage Completions stage whose result is to be imported 
+	 * @return a future that will complete when the completion stage completes, with its value
+	 */
+	public static <T> Future<T> fromCompletionStage(Context context, CompletionStage<T> stage) {
+		return context.executeBlocking(p -> stage.whenComplete((v,t) -> {
+			if (t == null)
+				p.complete(v);
+			else
+				p.fail(t);
+		}));
 	}
 }
