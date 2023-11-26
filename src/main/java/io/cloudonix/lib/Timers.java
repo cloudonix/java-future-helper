@@ -83,7 +83,16 @@ public class Timers {
 	 * @param delay number of time units to wait before invoking the operation
 	 */
 	public static Cancellable schedule(Runnable operation, TimeUnit timeUnit, int delay) {
-		return schedule(operation, timeUnit.toMillis(delay));
+		return schedule(new RunnableTask(operation), timeUnit.toMillis(delay));
+	}
+
+	/**
+	 * Schedule a one time operation
+	 * @param operation the operation to be executed
+	 * @param delay duration to delay the execution by
+	 */
+	public static Cancellable schedule(Runnable operation, Duration delay) {
+		return schedule(new RunnableTask(operation), delay.toMillis());
 	}
 
 	/**
