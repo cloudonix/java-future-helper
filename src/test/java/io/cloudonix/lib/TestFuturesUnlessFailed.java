@@ -25,7 +25,13 @@ public class TestFuturesUnlessFailed {
 		ExecutorService exec = Executors.newSingleThreadExecutor();
 		Futures.allOfUnlessFailed(Stream.of(1,2,3,4,5).map(i -> {
 			CompletableFuture<Boolean> f = new CompletableFuture<>();
-			exec.execute(() -> f.complete(true));
+			exec.execute(() -> {
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException e) {
+				}
+				f.complete(true);
+			});
 			return f;
 		})).whenComplete((v,t) -> {
 			assertNull(t);
