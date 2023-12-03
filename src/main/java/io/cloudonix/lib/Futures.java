@@ -396,19 +396,10 @@ public class Futures {
 	 *   will complete exceptionally as soon as one of the submitted futures has completed exceptionally. 
 	 */
 	public static CompletableFuture<Void> allOfUnlessFailed(CompletableFuture<?> ...futures) {
-		ConcurrentLinkedQueue<CompletableFuture<?>> queue = new ConcurrentLinkedQueue<>();
-		for (CompletableFuture<?> f : futures) {
-			queue.add(f);
-			f.thenRun(() -> queue.remove(f));
-		}
-		return allOfUnlessFailed(queue);
-	}
-	
-	private static CompletableFuture<Void> allOfUnlessFailed(ConcurrentLinkedQueue<CompletableFuture<?>> queue) {
-		CompletableFuture<?>[] rest = queue.toArray(new CompletableFuture[] {});
+		CompletableFuture<?>[] rest = Stream.of(futures).filter(f -> !f.isDone() || f.isCompletedExceptionally()).toArray(CompletableFuture[]::new);
 		if (rest.length == 0)
 			return CompletableFuture.completedFuture(null);
-		return CompletableFuture.anyOf(rest).thenCompose(__ -> allOfUnlessFailed(queue));
+		return CompletableFuture.anyOf(rest).thenCompose(__ -> allOfUnlessFailed(rest));
 	}
 	
 	/**
