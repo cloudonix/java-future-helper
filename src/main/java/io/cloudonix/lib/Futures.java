@@ -387,6 +387,51 @@ public class Futures {
 	public static <G> CompletableFuture<Void> allOf(List<CompletableFuture<G>> list) {
 		return CompletableFuture.allOf(list.toArray(new CompletableFuture[list.size()]));
 	}
+	
+	/**
+	 * Wait for all of the futures to complete successfully unless at least one of them has failed (completed with an
+	 * exception) - then complete immediately with the first exception received.
+	 * @param futures list of completable futures to wait on
+	 * @return a future that will complete successfully as soon as all submitted futures has completed successfully, or
+	 *   will complete exceptionally as soon as one of the submitted futures has completed exceptionally. 
+	 */
+	public static CompletableFuture<Void> allOfUnlessFailed(CompletableFuture<?> ...futures) {
+		ConcurrentLinkedQueue<CompletableFuture<?>> queue = new ConcurrentLinkedQueue<>();
+		for (CompletableFuture<?> f : futures) {
+			queue.add(f);
+			f.thenRun(() -> queue.remove(f));
+		}
+		return allOfUnlessFailed(queue);
+	}
+	
+	private static CompletableFuture<Void> allOfUnlessFailed(ConcurrentLinkedQueue<CompletableFuture<?>> queue) {
+		CompletableFuture<?>[] rest = queue.toArray(new CompletableFuture[] {});
+		if (rest.length == 0)
+			return CompletableFuture.completedFuture(null);
+		return CompletableFuture.anyOf(rest).thenCompose(__ -> allOfUnlessFailed(queue));
+	}
+	
+	/**
+	 * Wait for all of the futures to complete successfully unless at least one of them has failed (completed with an
+	 * exception) - then complete immediately with the first exception received.
+	 * @param futures list of completable futures to wait on
+	 * @return a future that will complete successfully as soon as all submitted futures has completed successfully, or
+	 *   will complete exceptionally as soon as one of the submitted futures has completed exceptionally. 
+	 */
+	public static CompletableFuture<Void> allOfUnlessFailed(Stream<CompletableFuture<?>> futures) {
+		return allOfUnlessFailed(futures.toArray(CompletableFuture[]::new));
+	}
+	
+	/**
+	 * Wait for all of the futures to complete successfully unless at least one of them has failed (completed with an
+	 * exception) - then complete immediately with the first exception received.
+	 * @param futures list of completable futures to wait on
+	 * @return a future that will complete successfully as soon as all submitted futures has completed successfully, or
+	 *   will complete exceptionally as soon as one of the submitted futures has completed exceptionally. 
+	 */
+	public static CompletableFuture<Void> allOfUnlessFailed(List<CompletableFuture<?>> futures) {
+		return allOfUnlessFailed(futures.toArray(new CompletableFuture[futures.size()]));
+	}
 
 	/**
 	 * Returns a new CompletableFuture that is completed when the first future in the stream
