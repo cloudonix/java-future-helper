@@ -1,5 +1,6 @@
 package io.cloudonix.lib;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -323,6 +324,38 @@ public class Promises {
 		});
 	}
 	
+	/**
+	 * Generate a Vert.x Future composition function that delays the return of a specified value instead of the received
+	 * @param <T> Value type of the promise
+	 * @param <G> Value type of the resulting value
+	 * @param delay delay to impart on the value
+	 * @return A function to be used in @{link {@link Future#compose(Function)} or {@link Future#recover(Function)}
+	 */
+	public static <T,G> Function<T, Future<G>> delayMap(Duration delay, G value) {
+		return t -> delay(delay).apply(t).map(value);
+	}
+	
+	/**
+	 * Generate a Vert.x Future composition function that delays the return of a specified value instead of the received
+	 * @param <T> Value type of the promise
+	 * @param <G> Value type of the resulting value
+	 * @param delay delay in milliseconds to impart on the value
+	 * @return A function to be used in @{link {@link Future#compose(Function)} or {@link Future#recover(Function)}
+	 */
+	public static <T,G> Function<T, Future<G>> delayMap(long delay, G value) {
+		return t -> delay(delay).apply(t).map(value);
+	}
+
+	/**
+	 * Generate a Vert.x Future composition function that delays the return of an arbitrary value
+	 * @param <T> Value type of the promise
+	 * @param delay delay in milliseconds to impart on the value
+	 * @return A function to be used in @{link {@link Future#compose(Function)}
+	 */
+	public static <T> Function<T, Future<T>> delay(Duration delay) {
+		return delay(delay.toMillis());
+	}
+
 	/**
 	 * Generate a Vert.x Future composition function that delays the return of an arbitrary value
 	 * @param <T> Value type of the promise
