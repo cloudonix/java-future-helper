@@ -1,5 +1,6 @@
 package io.cloudonix.lib;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -575,6 +576,16 @@ public class Futures {
 		return new StreamFutureResolver<>();
 	}
 
+	/**
+	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
+	 * @param <T> Value type of the promise
+	 * @param delay delay to impart on the value
+	 * @return A function to be used in @{link {@link CompletableFuture#thenCompose(Function)}
+	 */
+	public static <T> Function<T, CompletableFuture<T>> delay(Duration delay) {
+		return delay(delay.toMillis());
+	}
+	
 	/**
 	 * Generate a CompletableFuture composition function that delays the return of an arbitrary value
 	 * @param <T> Value type of the promise
