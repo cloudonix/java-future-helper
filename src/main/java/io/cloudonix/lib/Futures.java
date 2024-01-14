@@ -215,6 +215,84 @@ public class Futures {
 	}
 	
 	/**
+	 * A helper to implement Vert.x-style <code>onSuccess</code> handlers that are not required to return anything and
+	 * do not change the composition value.
+	 * 
+	 * This method will return a handler for {@link CompletionStage#handle(BiFunction)}.
+	 * 
+	 * When the resulting stage is run,
+	 * if the previous stage has completed successfully then the handler provided here will be called with the value of
+	 * the previous stage, and the stage will resolve to that value (that value can be mutated by this handler).
+	 * 
+	 * If the previous stage has completed exceptionally, this handler will not be called and the resulting stage will
+	 * complete exceptionally with the same exception.
+	 * 
+	 * Usage example:
+	 * 
+	 * <pre><code>
+	 * CompletableFuture.succeededFuture(1)
+	 * .handle(Futures.onSuccess(i -> log.info("Got {}",i)));
+	 * .thenAccept(i -> log.info("Also got {}", i));
+	 * </code></pre>
+	 * 
+	 * @param <T> The value type of the composition
+	 * @param handler The handler that will be called if the composition completed with a value (and not exceptionally).
+	 * @return A promise that will resolve to the composition value that was delivered to the onSuccess handler, if the
+	 *   previous stage completed successfully, reject with the exceptional completion of the previous stage if it has
+	 *   completed exceptionally, or - if the onSuccess handler threw an exception - reject with the new exception.
+	 */
+	public static <T> BiFunction<T,Throwable,T> onSuccess(Consumer<T> handler) {
+		return (v,e) -> {
+			if (e == null) {
+				handler.accept(v);
+				return v;
+			} else {
+				if (e instanceof RuntimeException)
+					throw ((RuntimeException)e);
+				throw new CompletionException(e);
+			}
+		};
+	}
+	
+	/**
+	 * A helper to implement Vert.x-style <code>onFailure</code> handlers that are not required to return anything and
+	 * do not change the composition value.
+	 * 
+	 * This method will return a handler for {@link CompletionStage#handle(BiFunction)}.
+	 * 
+	 * When the resulting stage is run, if the previous stage has completed successfully then handler provided here will
+	 * not be called and the stage will resolve to original value.
+	 * 
+	 * If the previous stage has completed exceptionally, the handler provided here will be called with the exception and
+	 * the resulting stage will also complete exceptionally with the same exception.
+	 * 
+	 * Usage example:
+	 * 
+	 * <pre><code>
+	 * CompletableFuture.failedFuture(new Exception("This is an error")
+	 * .handle(Futures.onFailure(e -> log.error("We got an error", e)))
+	 * .exceptionally(e -> e.getMessage());
+	 * </code></pre>
+	 * 
+	 * @param <T> The value type of the composition
+	 * @param handler The handler that will be called if the composition completed exceptionally
+	 * @return A promise that will resolve to the composition value that was delivered to the onSuccess handler, if the
+	 *   previous stage completed successfully, reject with the exceptional completion of the previous stage if it has
+	 *   completed exceptionally, or - if the onFailure handler threw an exception - reject with the new exception.
+	 */
+	public static <T> BiFunction<T,Throwable,T> onFailure(Consumer<Throwable> handler) {
+		return (v,e) -> {
+			if (e != null) {
+				handler.accept(e);
+				if (e instanceof RuntimeException)
+					throw ((RuntimeException)e);
+				throw new CompletionException(e);
+			}
+			return v;
+		};
+	}
+	
+	/**
 	 * Convert a Vert.x-style async call (with callback) to a Java {@link CompletableFuture}.
 	 *
 	 * The action is expected to consume a callback of the required type and provide it as the callback
