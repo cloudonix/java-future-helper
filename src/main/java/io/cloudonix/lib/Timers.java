@@ -8,7 +8,50 @@ import java.util.concurrent.TimeUnit;
 
 public class Timers {
 	
-	private static final Timer timer = new Timer("cxlib-timer", true);
+	private static final TimerHolder timer = new TimerHolder();
+	private static class TimerHolder {
+		private Timer timer;
+		
+		public TimerHolder() {
+			reset();
+		}
+		
+		private void reset() {
+			if (timer != null)
+				timer.cancel();
+			timer = new Timer("cxlib-timer", true);
+		}
+		
+		public void scheduleAtFixedRate(TimerTask task, long delay, long period) {
+			try {
+				timer.scheduleAtFixedRate(task, null, period);
+			} catch (IllegalStateException e) {
+				java.util.logging.Logger.getLogger(task.getClass().toString()).severe("Timer thread gone while running! trying to restart");
+				reset();
+				scheduleAtFixedRate(task, delay, period);
+			}
+		}
+
+		public void schedule(RunnableTask operation, long delay) {
+			try {
+				timer.schedule(operation, delay);
+			} catch (IllegalStateException e) {
+				java.util.logging.Logger.getLogger(operation.getClass().toString()).severe("Timer thread gone while running! trying to restart");
+				reset();
+				schedule(operation, delay);
+			}
+		}
+
+		public void schedule(RunnableTask operation, Date time) {
+			try {
+				timer.schedule(operation, time);
+			} catch (IllegalStateException e) {
+				java.util.logging.Logger.getLogger(operation.getClass().toString()).severe("Timer thread gone while running! trying to restart");
+				reset();
+				schedule(operation, time);
+			}
+		}
+	};
 	
 	/**
 	 * Public API for canceling future schedules
