@@ -22,13 +22,13 @@ public class Timers {
 			timer = new Timer("cxlib-timer", true);
 		}
 		
-		public void scheduleAtFixedRate(TimerTask task, long delay, long period) {
+		public void scheduleAtFixedRate(TimerTask task, long start, long period) {
 			try {
-				timer.scheduleAtFixedRate(task, null, period);
+				timer.scheduleAtFixedRate(task, start, period);
 			} catch (IllegalStateException e) {
 				java.util.logging.Logger.getLogger(task.getClass().toString()).severe("Timer thread gone while running! trying to restart");
 				reset();
-				scheduleAtFixedRate(task, delay, period);
+				scheduleAtFixedRate(task, start, period);
 			}
 		}
 
