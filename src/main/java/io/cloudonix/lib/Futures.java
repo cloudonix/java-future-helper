@@ -556,8 +556,13 @@ public class Futures {
 
 	private static class Holder<T> {
 		T value;
-		public Holder(T val) {
+		Throwable exception;
+		Holder(T val) {
 			value = val;
+		}
+		Holder(Throwable err) {
+			value = null;
+			exception = err;
 		}
 	}
 	
@@ -565,19 +570,29 @@ public class Futures {
 	 * wait for all of the futures to complete and return a list of their results
 	 *
 	 * @param <G> Value type of the stream's promises
-	 * @param futures
-	 *            the stream to execute allOf on
-	 * @return a CompletableFuture that will complete when all completableFutures in
-	 *         the stream are completed and contains a list of their results
+	 * @param futures the stream to execute allOf on
+	 * @return a promise that will resolve when all promises in the stream are resolved to a list of promise results, or
+	 *    reject if any of input promises reject, with the error of the first rejection, wrapped in a {@link CompletionException}. 
 	 */
 	public static <G> CompletableFuture<List<G>> resolveAll(Stream<CompletableFuture<G>> futures) {
 		ConcurrentSkipListMap<Integer, Holder<G>> out = new ConcurrentSkipListMap<>();
 		AtomicInteger i = new AtomicInteger(0);
 		return allOf(futures.map(f -> {
 			int index = i.getAndIncrement();
-			return f.thenAccept(v -> out.put(index, new Holder<>(v)));
+			return f.handle((G val, Throwable t) -> {
+				if (t == null)
+					out.put(index, new Holder<>(val));
+				else
+					out.put(index, new Holder<>(t));
+				return null;
+			});
 		}))
-		.thenApply(v -> out.values().stream().map(h -> h.value).collect(Collectors.toList()));
+		.thenApply(v -> {
+			out.values().stream().filter(h -> h.exception != null).findFirst().ifPresent(h -> {
+				throw new CompletionException(h.exception);
+			});
+			return out.values().stream().map(h -> h.value).collect(Collectors.toList());
+		});
 	}
 
 	/**
@@ -608,7 +623,8 @@ public class Futures {
 	}
 
 	/**
-	 * Create a stream collector to help resolve a stream of promises for values to a promise to a list of values
+	 * Create a stream collector to help resolve a stream of promises for values to a promise to a list of values.
+	 * This implementation uses {@link #resolveAll(Stream)} to handle resolution of the stream.
 	 * @param <G> The type of futures resolved by this stream
 	 * @return a collector that collects a stream of futures to a future list
 	 */
