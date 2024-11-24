@@ -57,6 +57,7 @@ public class Timers {
 	 * Public API for canceling future schedules
 	 * @author odeda
 	 */
+	@FunctionalInterface
 	public interface Cancellable {
 		/**
 		 * Cancel the future schedule
