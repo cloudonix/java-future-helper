@@ -4,7 +4,9 @@ import java.time.*;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 public class Timers {
 	
@@ -77,9 +79,12 @@ public class Timers {
 			try {
 				op.run();
 			} catch (Throwable t) {
-				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
+				getLogger().severe("Error in timer task: " + t);
 				t.printStackTrace();
 			}
+		}
+		protected Logger getLogger() {
+			return java.util.logging.Logger.getLogger(op.getClass().toString());
 		}
 	}
 	
@@ -104,8 +109,12 @@ public class Timers {
 			try {
 				schedule(new RecuringRunnableTask(this), getMilsForNext(timeOfDay, timezone));
 				op.run();
+			} catch (RejectedExecutionException e) {
+				getLogger().severe("Reschedule rejected (" + e +") timer must be dead, resetting");
+				timer.reset();
+				run();
 			} catch (Throwable t) {
-				java.util.logging.Logger.getLogger(op.getClass().toString()).severe("Error in timer task: " + t);
+				getLogger().severe("Error in timer task: " + t);
 				t.printStackTrace();
 			}
 		}

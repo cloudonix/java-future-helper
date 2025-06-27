@@ -49,6 +49,13 @@ test-jdk-20:
   script:
     - mvn -B test
 
+test-jdk-21:
+  stage: test
+  needs: []
+  image: maven:3-amazoncorretto-21
+  script:
+    - mvn -B test
+
 package:
   stage: build
   needs: []
