@@ -20,6 +20,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
+import io.cloudonix.lib.promises.MapToSerializedPromisesContext;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
@@ -107,6 +108,10 @@ public class Promises {
 	 */
 	public static <T> Future<List<T>> resolveAll(Stream<Future<T>> futures) {
 		return futures.collect(resolvingCollector());
+	}
+	
+	public static <T,G> Function<T,Future<G>> mapToSerializedPromises(Function<T,Future<G>> mapper) {
+		return new MapToSerializedPromisesContext<T,G>(mapper);
 	}
 
 	/**
