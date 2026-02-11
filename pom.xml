@@ -54,6 +54,12 @@
 			<version>[3.11,3.999)</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.hamcrest</groupId>
+			<artifactId>hamcrest-core</artifactId>
+			<version>3.0</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -66,7 +72,7 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-source-plugin	</artifactId>
+				<artifactId>maven-source-plugin</artifactId>
 				<executions>
 					<execution>
 						<goals>
