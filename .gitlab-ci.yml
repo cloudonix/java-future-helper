@@ -28,24 +28,17 @@ test-jdk-17:
   script:
     - mvn -B test
 
-test-jdk-19:
-  stage: test
-  needs: []
-  image: maven:3-amazoncorretto-19
-  script:
-    - mvn -B test
-
-test-jdk-20:
-  stage: test
-  needs: []
-  image: maven:3-amazoncorretto-20
-  script:
-    - mvn -B test
-
 test-jdk-21:
   stage: test
   needs: []
   image: maven:3-amazoncorretto-21
+  script:
+    - mvn -B test
+
+test-jdk-25:
+  stage: test
+  needs: []
+  image: maven:3-amazoncorretto-25
   script:
     - mvn -B test
 
