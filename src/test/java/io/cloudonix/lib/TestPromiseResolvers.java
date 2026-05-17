@@ -4,12 +4,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import org.junit.Test;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonObject;
 
 public class TestPromiseResolvers {
 
@@ -108,4 +111,30 @@ public class TestPromiseResolvers {
 		assertThat(f.cause(), is(instanceOf(RuntimeException.class)));
 	}
 
+	@Test
+	public synchronized void testComposeJoin() throws Throwable {
+		Future<?> result = Future.all(Arrays.asList(
+				Future.succeededFuture(1000L),
+				Future.succeededFuture("Hello"),
+				Future.succeededFuture(new JsonObject().put("foo", "bar")),
+				Future.succeededFuture(Arrays.asList(1,2,3)),
+				Future.succeededFuture(true)
+				))
+		.compose(Promises.combine((Long l, String s, JsonObject j, List<Integer> a, Boolean b) -> {
+			assertThat(l, is(equalTo(1000L)));
+			assertThat(s, is(equalTo("Hello")));
+			assertThat(j.getString("foo"), is(equalTo("bar")));
+			assertThat(a.size(), is(equalTo(3)));
+			assertThat(b, is(equalTo(true)));
+			return Future.succeededFuture();
+		}))
+		.onComplete(__ -> notify());
+		while (!result.isComplete()) {
+			try {
+				wait();
+			} catch (InterruptedException e) {}
+		}
+		if (result.failed())
+			throw result.cause();
+	}
 }

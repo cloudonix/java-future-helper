@@ -20,12 +20,14 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-import io.cloudonix.lib.promises.MapToSerializedPromisesContext;
 import io.vertx.core.AsyncResult;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+
+import io.cloudonix.lib.promises.MapToSerializedPromisesContext;
 
 /**
  * Work in progress helper that is specific to Vert.x {@link Promise}s and {@link Future}s.
@@ -72,7 +74,7 @@ public class Promises {
 	 * @param mapper a recovery mapper that takes the exception and either returns a value or throws another exception (rethrowing is also OK)
 	 * @return a {@link Function} that can be used as the handler for {@link Future#otherwise(Function)}
 	 */
-	public static <T,E extends Throwable> Function<Throwable,T> recover(Class<E> errType, Futures.ThrowingFunction<E,? extends T> mapper) {
+	public static <T,E extends Throwable> Function<Throwable,T> recover(Class<E> errType, ThrowingFunction<E,? extends T> mapper) {
 		return Futures.on(errType, mapper);
 	}
 	
@@ -297,6 +299,132 @@ public class Promises {
 		return results.output;
 	}
 	
+	public interface BiCompose<A,B,R> { Future<R> apply(A a,B b); }
+	public interface TriCompose<A,B,C,R> { Future<R> apply(A a,B b, C c); }
+	public interface QuadCompose<A,B,C,D,R> { Future<R> apply(A a,B b, C c, D d); }
+	public interface QuantCompose<A,B,C,D,E,R> { Future<R> apply(A a,B b, C c, D d, E e); }
+	public interface HexaCompose<A,B,C,D,E,F,R> { Future<R> apply(A a,B b, C c, D d, E e, F f); }
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future)} that when both input futures resolve, calls the mapper with both
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <V,A,B> Function<CompositeFuture,Future<V>> combine(BiCompose<A,B,V> mapper) {
+		return f -> {
+			if (f.failed())
+				return Future.failedFuture(f.cause());
+			return mapper.apply(f.resultAt(0), f.resultAt(1));
+		};
+	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <V,A,B,C> Function<CompositeFuture,Future<V>> combine(TriCompose<A,B,C,V> mapper) {
+		return f -> {
+			if (f.failed())
+				return Future.failedFuture(f.cause());
+			return mapper.apply(f.resultAt(0), f.resultAt(1), f.resultAt(2));
+		};
+	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <V,A,B,C,D> Function<CompositeFuture,Future<V>> combine(QuadCompose<A,B,C,D,V> mapper) {
+		return f -> {
+			if (f.failed())
+				return Future.failedFuture(f.cause());
+			return mapper.apply(f.resultAt(0), f.resultAt(1), f.resultAt(2), f.resultAt(3));
+		};
+	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <E> Resolution type of the fifth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <V,A,B,C,D,E> Function<CompositeFuture,Future<V>> combine(QuantCompose<A,B,C,D,E,V> mapper) {
+		return f -> {
+			if (f.failed())
+				return Future.failedFuture(f.cause());
+			return mapper.apply(f.resultAt(0), f.resultAt(1), f.resultAt(2), f.resultAt(3), f.resultAt(4));
+		};
+	}
+	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <E> Resolution type of the fifth promise
+	 * @param <F> Resolution type of the sixth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
+	public static <V,A,B,C,D,E,F> Function<CompositeFuture,Future<V>> combine(HexaCompose<A,B,C,D,E,F,V> mapper) {
+		return f -> {
+			if (f.failed())
+				return Future.failedFuture(f.cause());
+			return mapper.apply(f.resultAt(0), f.resultAt(1), f.resultAt(2), f.resultAt(3), f.resultAt(4), f.resultAt(5));
+		};
+	}
+	
 	/**
 	 * An analogous implementation to {@link CompletableFuture#applyToEither(CompletionStage, Function)} for Vert.x
 	 * {@link Future} that when either input futures resolve, calls the mapper with the first result to resolve to create a
@@ -436,11 +564,6 @@ public class Promises {
 	 * @return a future that will complete when the completion stage completes, with its value
 	 */
 	public static <T> Future<T> fromCompletionStage(Context context, CompletionStage<T> stage) {
-		return context.executeBlocking(p -> stage.whenComplete((v,t) -> {
-			if (t == null)
-				p.complete(v);
-			else
-				p.fail(t);
-		}));
+		return Future.fromCompletionStage(stage);
 	}
 }
