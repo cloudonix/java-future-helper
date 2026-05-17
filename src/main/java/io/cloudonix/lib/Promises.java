@@ -305,6 +305,20 @@ public class Promises {
 	public interface QuantCompose<A,B,C,D,E,R> { Future<R> apply(A a,B b, C c, D d, E e); }
 	public interface HexaCompose<A,B,C,D,E,F,R> { Future<R> apply(A a,B b, C c, D d, E e, F f); }
 	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future)} that when both input futures resolve, calls the mapper with both
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
 	public static <V,A,B> Function<CompositeFuture,Future<V>> combine(BiCompose<A,B,V> mapper) {
 		return f -> {
 			if (f.failed())
@@ -313,6 +327,21 @@ public class Promises {
 		};
 	}
 	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
 	public static <V,A,B,C> Function<CompositeFuture,Future<V>> combine(TriCompose<A,B,C,V> mapper) {
 		return f -> {
 			if (f.failed())
@@ -321,6 +350,22 @@ public class Promises {
 		};
 	}
 	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
 	public static <V,A,B,C,D> Function<CompositeFuture,Future<V>> combine(QuadCompose<A,B,C,D,V> mapper) {
 		return f -> {
 			if (f.failed())
@@ -329,6 +374,23 @@ public class Promises {
 		};
 	}
 	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <E> Resolution type of the fifth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
 	public static <V,A,B,C,D,E> Function<CompositeFuture,Future<V>> combine(QuantCompose<A,B,C,D,E,V> mapper) {
 		return f -> {
 			if (f.failed())
@@ -337,6 +399,24 @@ public class Promises {
 		};
 	}
 	
+	/**
+	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
+	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
+	 * results to create a {@link Future} that will be used to complete the returned Future.
+	 * 
+	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
+	 * the handler received.
+	 * @param <A> Resolution type of the first promise
+	 * @param <B> Resolution type of the second promise
+	 * @param <C> Resolution type of the third promise
+	 * @param <D> Resolution type of the fourth promise
+	 * @param <E> Resolution type of the fifth promise
+	 * @param <F> Resolution type of the sixth promise
+	 * @param <V> Resolution type of the mapper's resulting promise
+	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
+	 *   error occured.
+	 */
 	public static <V,A,B,C,D,E,F> Function<CompositeFuture,Future<V>> combine(HexaCompose<A,B,C,D,E,F,V> mapper) {
 		return f -> {
 			if (f.failed())
