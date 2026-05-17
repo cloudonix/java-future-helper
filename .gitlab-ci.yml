@@ -14,13 +14,6 @@ stages:
     - deploy
     - s3
 
-test-jdk-8:
-  stage: test
-  needs: []
-  image: maven:3-amazoncorretto-8
-  script:
-    - mvn -B test
-
 test-jdk-11:
   stage: test
   needs: []
