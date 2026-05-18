@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
@@ -136,5 +137,35 @@ public class TestPromiseResolvers {
 		}
 		if (result.failed())
 			throw result.cause();
+	}
+
+	@Test
+	public synchronized void testMapJoin() throws Throwable {
+		AtomicInteger res = new AtomicInteger();
+		Future<?> result = Future.all(Arrays.asList(
+				Future.succeededFuture(1000L),
+				Future.succeededFuture("Hello"),
+				Future.succeededFuture(new JsonObject().put("foo", "bar")),
+				Future.succeededFuture(Arrays.asList(1,2,3)),
+				Future.succeededFuture(true)
+				))
+		.map(Promises.map((Long l, String s, JsonObject j, List<Integer> a, Boolean b) -> {
+			assertThat(l, is(equalTo(1000L)));
+			assertThat(s, is(equalTo("Hello")));
+			assertThat(j.getString("foo"), is(equalTo("bar")));
+			assertThat(a.size(), is(equalTo(3)));
+			assertThat(b, is(equalTo(true)));
+			return 5;
+		}))
+		.onSuccess(res::set)
+		.onComplete(__ -> notify());
+		while (!result.isComplete()) {
+			try {
+				wait();
+			} catch (InterruptedException e) {}
+		}
+		if (result.failed())
+			throw result.cause();
+		assertThat(res.get(), is(equalTo(5)));
 	}
 }
