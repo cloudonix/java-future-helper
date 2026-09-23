@@ -11,7 +11,7 @@ start-release:
 finish-release:
 	rel=$(shell git branch --show-current | cut -d/ -f2); git flow release finish $$rel  -m "Release $$rel" </dev/null
 	newrel=$(shell $(MAKE) -s current-version | perl -pi -e '$$"=".";@v=split/\./;$$v[@v-1]++if@v;$$_="@v";'); \
-	perl -pi -e 's,<version>$(shell $(MAKE) current-version)</version>,<version>'"$$newrel"'-SNAPSHOT</version>,' pom.xml
+	perl -pi -e 's,<version>$(shell $(MAKE) -s current-version)</version>,<version>'"$$newrel"'-SNAPSHOT</version>,' pom.xml
 	git commit pom.xml -m 'back to snapshot'
 
 push:
