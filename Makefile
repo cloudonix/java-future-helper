@@ -1,14 +1,16 @@
+MAKEFLAGS += --no-no-print-directory
+
 current-version:
 	@xmllint --xpath "*[local-name()='project']/*[local-name()='version']/text()" pom.xml | perl -ple 's/-SNAPSHOT//'
 
 start-release:
-	rel=$(shell $(MAKE) current-version); git flow release start $$rel
+	rel=$(shell $(MAKE) -s current-version); git flow release start $$rel
 	perl -pi -e 's/-SNAPSHOT//' pom.xml
 	git commit pom.xml -m 'set release version'
 
 finish-release:
 	rel=$(shell git branch --show-current | cut -d/ -f2); git flow release finish $$rel  -m "Release $$rel" </dev/null
-	newrel=$(shell $(MAKE) current-version | perl -pi -e '$$"=".";@v=split/\./;$$v[@v-1]++if@v;$$_="@v";'); \
+	newrel=$(shell $(MAKE) -s current-version | perl -pi -e '$$"=".";@v=split/\./;$$v[@v-1]++if@v;$$_="@v";'); \
 	perl -pi -e 's,<version>$(shell $(MAKE) current-version)</version>,<version>'"$$newrel"'-SNAPSHOT</version>,' pom.xml
 	git commit pom.xml -m 'back to snapshot'
 
