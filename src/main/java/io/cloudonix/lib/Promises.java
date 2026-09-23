@@ -9,6 +9,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -16,6 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
@@ -26,7 +28,7 @@ import io.vertx.core.Context;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
-
+import io.vertx.core.Vertx;
 import io.cloudonix.lib.promises.MapToSerializedPromisesContext;
 
 /**
@@ -39,6 +41,23 @@ import io.cloudonix.lib.promises.MapToSerializedPromisesContext;
  * @author odeda
  */
 public class Promises {
+	
+	/* Helper facility to find the current Vertx instance, if exists, or provide a lazy "system-wide fallback" instance */
+	
+	private static Vertx vertx = null;
+	private static Supplier<Vertx> fallbackVertx = () -> {
+		if (vertx != null) return vertx;
+		vertx = Vertx.vertx();
+		fallbackVertx = () -> vertx;
+		return vertx;
+	};
+	
+	private static Vertx vertx() {
+		Context ctx = Vertx.currentContext();
+		if (ctx == null)
+			return fallbackVertx.get();
+		return ctx.owner();
+	} 
 	
 	/**
 	 * A helper to handle specific errors using {@link Future#otherwise(Function)}, in a style idiomatic with Java's
@@ -692,11 +711,7 @@ public class Promises {
 	 * @return A function to be used in @{link {@link Future#compose(Function)}
 	 */
 	public static <T> Function<T, Future<T>> delay(long delay) {
-		Promise<T> promise = Promise.promise();
-		return value -> {
-			Timers.schedule(() -> promise.complete(value), delay);
-			return promise.future();
-		};
+		return value -> vertx().timer(delay).map(value);
 	}
 
 	/**
@@ -762,4 +777,29 @@ public class Promises {
 	public static <T> Future<T> fromCompletionStage(Context context, CompletionStage<T> stage) {
 		return Future.fromCompletionStage(stage);
 	}
+	
+	/**
+	 * A loop construct for promise completions
+	 * <p>
+	 * This allows a sort of "while loop" around a completion chain so that the chain is repeated until a test
+	 * condition succeeds. Using an "in-function" loop allows the operation to retain access to local (final) variables
+	 * without needing to formalize them into a recursable signature.
+	 * </p><p></p><p>
+	 * A contrived example:
+	 * </p>
+	 * <p><tt>
+	 * var collector = new {@link ConcurrentLinkedDeque}<Integer>() 
+	 * return loop(0, i -> { collector.add(i); return Future.succeededFuture(++i); }, i -> i > 10).map(collector);
+	 * </tt></p>
+	 * 
+	 * @param <T> the iterative value type - this can be a record of multiple interim types, if you don't like to keep all your state in local variables 
+	 * @param initial initial input to loop (think of this like your for-loop index)
+	 * @param operation the operation that accepts a T and return a promise for a T, to be repated until the predicate succeeds
+	 * @param doneTest the predicate that will test the result of the operation (or any closured value) - when it succeeds the loop is done
+	 * @return a promise that will complete with the result value from the last operation, or reject with the first failure from the operation
+	 */
+	public static <T> Future<T> loop(T initial, Function<T,Future<T>> operation, Predicate<T> doneTest) {
+		return operation.apply(initial).compose(res -> doneTest.test(res) ? Future.succeededFuture(res) : loop(res, operation, doneTest));
+	}
+
 }
