@@ -334,22 +334,22 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future)} that when both input futures resolve, calls the mapper with both
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).compose(Promises.combine((A a, B b) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).compose(Promises.combine((A a, B b) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * <p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <V> Resolution type of the mapper's resulting promise
 	 * @param mapper The mapping function that accepts pre-casted result values and returns a resulting future
-	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any
-	 *   error occured.
+	 * @return A promise that will resolve to the resolution of the promise returned from the mapper, or reject if any error occured.
 	 */
 	public static <V,A,B> Function<CompositeFuture,Future<V>> combine(BiCompose<A,B,V> mapper) {
 		return f -> {
@@ -363,16 +363,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).compose(Promises.combine((A a,B b,C c) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).compose(Promises.combine((A a,B b,C c) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -393,16 +394,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).compose(Promises.combine((A a,B b,C c, D d) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).compose(Promises.combine((A a,B b,C c, D d) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -424,16 +426,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).compose(Promises.combine((A a,B b,C c, D d, E e) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).compose(Promises.combine((A a,B b,C c, D d, E e) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * <p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -456,16 +459,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a result that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.combine((A a,B b,C c, D d, E e, F f) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.combine((A a,B b,C c, D d, E e, F f) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -489,16 +493,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.map((A a,B b) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.map((A a,B b) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <V> Resolution type of the mapper's resulting promise
@@ -518,16 +523,17 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.map((A a,B b,C c) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.map((A a,B b,C c) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -548,16 +554,18 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.map((A a,B b,C c, D d) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.map((A a,B b,C c, D d) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
+	 * 
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -579,16 +587,18 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a {@link Future} that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.map((A a,B b,C c, D d, E e) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.map((A a,B b,C c, D d, E e) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
+	 * 
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -611,16 +621,18 @@ public class Promises {
 	 * An analogous implementation to {@link CompletableFuture#thenCombine(CompletionStage, BiFunction)} for use with
 	 * Vert.x {@link Future#join(Future, Future, Future)} that when all input futures resolve, calls the mapper with all
 	 * results to create a result that will be used to complete the returned Future.
-	 * 
+	 * <p></p>
 	 * <p>
-	 * Example Usage:</br>
-	 * <code>
-	 * Future.join(...).map(Promises.map((A a,B b,C c, D d, E e, F f) -> { ... }))
-	 * </code>
+	 * Example Usage:
 	 * </p>
-	 * 
+	 * <pre>{@code
+	 * Future.join(...).map(Promises.map((A a,B b,C c, D d, E e, F f) -> { ... }))
+	 * }</pre>
+	 * <p>
 	 * If either input promises rejects with a failure, the result will reject with the {@link CompositeFuture} that
 	 * the handler received.
+	 * </p>
+	 * 
 	 * @param <A> Resolution type of the first promise
 	 * @param <B> Resolution type of the second promise
 	 * @param <C> Resolution type of the third promise
@@ -721,11 +733,11 @@ public class Promises {
 	 * and will propagate errors as failures down the Future chain, as expected.
 	 * 
 	 * Example usage:
-	 * <pre><code>
+	 * <pre>{@code
 	 * import static io.cloudonix.lib.Promises.*;
 	 * ...
 	 * getSomePromise().andThen(onSuccess(val -> handleValAndMaybeThrow(val))).andThen(onFailure(t -> reportFailure(t)));
-	 * </code></pre>
+	 * }</pre>
 	 * 
 	 * See Vert.x issue report https://github.com/eclipse-vertx/vert.x/issues/4455 for more details 
 	 * @param <T> Type of value carried by the promise
@@ -787,10 +799,10 @@ public class Promises {
 	 * </p><p></p><p>
 	 * A contrived example:
 	 * </p>
-	 * <p><tt>
-	 * var collector = new {@link ConcurrentLinkedDeque}<Integer>() 
+	 * <pre>{@code
+	 * var collector = new ConcurrentLinkedDeque<Integer>();
 	 * return loop(0, i -> { collector.add(i); return Future.succeededFuture(++i); }, i -> i > 10).map(collector);
-	 * </tt></p>
+	 * }</pre>
 	 * 
 	 * @param <T> the iterative value type - this can be a record of multiple interim types, if you don't like to keep all your state in local variables 
 	 * @param initial initial input to loop (think of this like your for-loop index)
